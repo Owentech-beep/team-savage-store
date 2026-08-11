@@ -1,0 +1,153 @@
+<%- include("partials/header") %>
+<%- include("partials/navbar") %>
+
+<section class="contact-hero d-flex align-items-center mt-5">
+  <div class="container text-center">
+
+    <p class="text-warning fw-bold text-uppercase mb-3">
+      Get In Touch
+    </p>
+
+    <h1 class="display-3 fw-bold text-white mb-4">
+      Contact TEAM SAVAGE
+    </h1>
+
+    <p class="lead text-light">
+      Questions, orders, collaborations, or support — we’d love to hear from you.
+    </p>
+
+  </div>
+</section>
+
+<section class="py-5 bg-white text-dark">
+  <div class="container">
+
+    <div class="row g-5">
+
+      <!-- Contact Info -->
+      <div class="col-lg-5">
+
+        <h2 class="fw-bold mb-4">Let’s Connect</h2>
+
+        <div class="contact-info-card mb-4 p-4">
+
+          <div class="d-flex align-items-start">
+
+            <i class="fa-solid fa-envelope fa-2x text-warning me-3"></i>
+
+            <div>
+              <h6 class="fw-bold mb-1">Email</h6>
+              <p class="mb-0 text-muted">support@teamsavage.co.za</p>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="contact-info-card mb-4 p-4">
+
+          <div class="d-flex align-items-start">
+
+            <i class="fa-solid fa-phone fa-2x text-warning me-3"></i>
+
+            <div>
+              <h6 class="fw-bold mb-1">Phone / WhatsApp</h6>
+              <p class="mb-0 text-muted">+27 00 000 0000</p>
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="contact-info-card mb-4 p-4">
+
+          <div class="d-flex align-items-start">
+
+            <i class="fa-solid fa-location-dot fa-2x text-warning me-3"></i>
+
+            <div>
+              <h6 class="fw-bold mb-1">Location</h6>
+              <p class="mb-0 text-muted">South Africa</p>
+            </div>
+
+          </div>
+
+        </div>
+
+        <a href="https://wa.me/270000000000"
+           class="btn btn-success btn-lg w-100"
+           target="_blank">
+
+          <i class="fa-brands fa-whatsapp me-2"></i>
+          Chat on WhatsApp
+
+        </a>
+
+      </div>
+
+      <!-- Contact Form -->
+      <div class="col-lg-7">
+
+        <div class="card shadow-sm border-0">
+
+          <div class="card-body p-4 p-lg-5">
+
+            <h3 class="fw-bold mb-4">Send Us a Message</h3>
+
+            <form action="/contact" method="POST">
+
+              <div class="row g-3">
+
+                <div class="col-md-6">
+                  <label class="form-label">First Name</label>
+                  <input type="text" name="firstName" class="form-control" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Last Name</label>
+                  <input type="text" name="lastName" class="form-control" required>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Email Address</label>
+                  <input type="email" name="email" class="form-control" required>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Subject</label>
+                  <input type="text" name="subject" class="form-control" required>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Message</label>
+                  <textarea name="message"
+                            rows="6"
+                            class="form-control"
+                            required></textarea>
+                </div>
+
+                <div class="col-12">
+                  <button type="submit" class="btn btn-warning btn-lg w-100">
+
+                    <i class="fa-solid fa-paper-plane me-2"></i>
+                    Send Message
+
+                  </button>
+                </div>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<%- include("partials/footer") %>

@@ -1,0 +1,66 @@
+<%- include("partials/header") %>
+<%- include("partials/navbar") %>
+
+<section class="shop-hero py-5 mt-5">
+  <div class="container text-center">
+    <h1 class="display-4 fw-bold">SHOP</h1>
+    <p class="text-light">Premium gym apparel & accessories</p>
+  </div>
+</section>
+
+<section class="py-5 bg-white text-dark">
+  <div class="container">
+
+    <div class="row g-4">
+
+      <% products.forEach(product => { %>
+        <div class="col-md-6 col-lg-4 col-xl-3">
+
+          <div class="product-card h-100">
+
+            <div class="product-image">
+              <img src="<%= product.image %>"
+                   class="img-fluid"
+                   alt="<%= product.name %>">
+            </div>
+
+            <div class="p-3">
+
+              <p class="small text-uppercase text-secondary mb-1">
+                <%= product.category %>
+              </p>
+
+              <h5 class="fw-bold mb-2">
+                <%= product.name %>
+              </h5>
+
+              <p class="fw-bold text-warning fs-5 mb-3">
+                R<%= product.price %>.00
+              </p>
+
+              <div class="d-grid gap-2">
+
+                <a href="/product/<%= product.id %>"
+                   class="btn btn-outline-dark">
+                  View Product
+                </a>
+
+                <button class="btn btn-warning add-to-cart"
+                data-id="<%= product.id %>"
+                data-name="<%= product.name %>"
+                data-price="<%= product.price %>"
+                data-image="<%= product.image %>">
+                Add to Cart
+                </button>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+
+    </div>
+  </div>
+</section>
+
+<%- include("partials/footer") %>

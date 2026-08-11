@@ -1,0 +1,133 @@
+<%- include("partials/header") %>
+<%- include("partials/navbar") %>
+
+<section class="hero d-flex align-items-center">
+    <div class="container">
+        <div class="row align-items-center">
+
+            <div class="col-lg-6">
+
+                <p class="text-warning fw-bold text-uppercase mb-3">
+                    Premium Gym Apparel
+                </p>
+
+                <h1 class="display-2 fw-bold text-white mb-4 hero-title">
+                    NORMAL IS LAME.
+                    <br>
+                    SAVAGE IS US.
+                </h1>
+
+                <p class="lead text-light mb-4">
+                    Premium gym apparel and accessories built for those who
+                    train differently.
+                </p>
+
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="/shop" class="btn btn-warning btn-lg px-5">
+                        Shop Now
+                    </a>
+
+                    <a href="/about" class="btn btn-outline-light btn-lg px-5">
+                        Explore
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section class="py-5 bg-white text-dark">
+    <div class="container">
+
+        <div class="text-center mb-5">
+
+            <p class="text-warning fw-bold text-uppercase mb-2">
+                Best Sellers
+            </p>
+
+            <h2 class="display-5 fw-bold mb-3">
+                Featured Products
+            </h2>
+
+            <p class="text-muted mx-auto" style="max-width: 650px;">
+                Our most popular gym wear and accessories trusted by athletes,
+                bodybuilders, and fitness enthusiasts across South Africa.
+            </p>
+
+        </div>
+
+        <div class="row g-4">
+
+            <% products.slice(0, 4).forEach(product => { %>
+
+            <div class="col-md-6 col-lg-3">
+
+                <div class="featured-product-card h-100">
+
+                    <div class="featured-product-image">
+
+                        <img src="<%= product.image %>"
+                            class="img-fluid"
+                            alt="<%= product.name %>">
+
+                    </div>
+
+                    <div class="p-4 text-center">
+
+                        <p class="text-muted small mb-2">
+                            <%= product.category %>
+                        </p>
+
+                        <h5 class="fw-bold mb-3">
+                            <%= product.name %>
+                        </h5>
+
+                        <p class="text-warning fw-bold fs-5 mb-4">
+                            R<%= product.price %>.00
+                        </p>
+
+                        <div class="d-grid gap-2">
+
+                            <a href="/product/<%= product.id %>"
+                                class="btn btn-outline-dark">
+                                View Product
+                            </a>
+
+                            <button class="btn btn-warning add-to-cart"
+                                data-id="<%= product.id %>"
+                                data-name="<%= product.name %>"
+                                data-price="<%= product.price %>"
+                                data-image="<%= product.image %>">
+
+                                Add to Cart
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <% }) %>
+
+        </div>
+
+        <div class="text-center mt-5">
+
+            <a href="/shop" class="btn btn-dark btn-lg px-5">
+
+                <i class="fa-solid fa-store me-2"></i>
+                Shop All Products
+
+            </a>
+
+        </div>
+
+    </div>
+</section>
+
+<%- include("partials/footer") %>

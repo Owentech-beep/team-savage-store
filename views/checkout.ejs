@@ -1,0 +1,147 @@
+<%- include("partials/header") %>
+<%- include("partials/navbar") %>
+
+<section class="py-5 mt-5 bg-white text-dark">
+    <div class="container">
+
+        <h1 class="fw-bold mb-5">Checkout</h1>
+
+        <div class="row g-5">
+
+            <!-- Customer Details -->
+            <div class="col-lg-7">
+
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+
+                        <h4 class="fw-bold mb-4">Customer Information</h4>
+
+                        <form>
+
+                            <div class="row g-3">
+
+                                <div class="col-md-6">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" class="form-control">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" class="form-control">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label">Phone
+                                        Number</label>
+                                    <input type="tel" class="form-control">
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label">Street
+                                        Address</label>
+                                    <input type="text" class="form-control">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">City</label>
+                                    <input type="text" class="form-control">
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Province</label>
+                                    <select class="form-select" name="province"
+                                        required>
+                                        <option value>Province</option>
+                                        <option>Eastern Cape</option>
+                                        <option>Free State</option>
+                                        <option>Gauteng</option>
+                                        <option>KwaZulu-Natal</option>
+                                        <option>Limpopo</option>
+                                        <option>Mpumalanga</option>
+                                        <option>North West</option>
+                                        <option>Northern Cape</option>
+                                        <option>Western Cape</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label">Postal
+                                        Code</label>
+                                    <input type="text" class="form-control">
+                                </div>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <h4 class="fw-bold mb-4">Order Summary</h4>
+
+                        <div id="checkout-items" class="mb-4"></div>
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal</span>
+                            <span id="checkout-subtotal">R0.00</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Delivery Fee</span>
+                            <span id="checkout-delivery">R100.00</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>VAT</span>
+                            <span>Included</span>
+                        </div>
+
+                        <hr>
+
+                        <div
+                            class="d-flex justify-content-between fw-bold fs-5 mb-4">
+                            <span>Total</span>
+                            <span id="checkout-total">R100.00</span>
+                        </div>
+
+                        <div class="d-grid gap-3">
+
+                            <button class="btn btn-warning btn-lg">
+                                <i class="fa-solid fa-credit-card me-2"></i>
+                                Pay with Card
+                            </button>
+
+                            <button class="btn btn-outline-dark btn-lg">
+                                <i
+                                    class="fa-solid fa-mobile-screen-button me-2"></i>
+                                Pay with EFT
+                            </button>
+
+                        </div>
+
+                        <p class="small text-muted mt-3 mb-0">
+                            Secure payments powered by TEAM SAVAGE Commerce.
+                        </p>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<%- include("partials/footer") %>

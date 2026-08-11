@@ -1,0 +1,51 @@
+<%- include("partials/header") %>
+<%- include("partials/navbar") %>
+
+<section class="py-5 mt-5 bg-white text-dark">
+    <div class="container">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="fw-bold">Shopping Cart</h1>
+
+            <button id="clear-cart" class="btn btn-outline-danger">
+                Clear Cart
+            </button>
+        </div>
+
+        <div id="cart-items"></div>
+
+        <div class="card mt-4 shadow-sm">
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal</span>
+                    <span id="cart-subtotal">R0.00</span>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Delivery Fee</span>
+                    <span id="delivery-fee">R100.00</span>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between fw-bold fs-5">
+                    <span>Total</span>
+                    <span id="cart-total">R100.00</span>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <a href="/checkout" class="btn btn-warning btn-lg">
+                        Proceed to Checkout
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script src="/js/main.js"></script>
+<script src="/js/cart.js"></script>
+<%- include("partials/footer") %>

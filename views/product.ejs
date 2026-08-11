@@ -1,0 +1,124 @@
+<%- include("partials/header") %>
+<%- include("partials/navbar") %>
+
+<section class="py-5 mt-5 bg-white text-dark">
+  <div class="container">
+
+    <div class="row align-items-center g-5">
+
+      <!-- Product Image -->
+      <div class="col-lg-6">
+
+        <div class="product-details-image p-4 text-center">
+          <img src="<%= product.image %>"
+               class="img-fluid"
+               alt="<%= product.name %>">
+        </div>
+
+      </div>
+
+      <!-- Product Details -->
+      <div class="col-lg-6">
+
+        <p class="text-uppercase text-secondary fw-semibold mb-2">
+          <%= product.category %>
+        </p>
+
+        <h1 class="display-5 fw-bold mb-3">
+          <%= product.name %>
+        </h1>
+
+        <p class="fs-2 fw-bold text-warning mb-4">
+          R<%= product.price %>.00
+        </p>
+
+        <p class="text-muted mb-4">
+          Premium performance gym wear designed for athletes who demand comfort,
+          durability, and style during every workout session.
+        </p>
+
+        <!-- Sizes -->
+        <div class="mb-4">
+
+          <h6 class="fw-bold mb-3">Select Size</h6>
+
+          <div class="d-flex flex-wrap gap-2">
+
+            <button class="btn btn-outline-dark">S</button>
+            <button class="btn btn-outline-dark">M</button>
+            <button class="btn btn-outline-dark">L</button>
+            <button class="btn btn-outline-dark">XL</button>
+
+          </div>
+        </div>
+
+        <!-- Quantity -->
+        <div class="mb-4">
+
+          <h6 class="fw-bold mb-3">Quantity</h6>
+
+          <div style="width:120px;">
+            <input type="number"
+                   class="form-control"
+                   value="1"
+                   min="1">
+          </div>
+
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-grid gap-3">
+
+        <button class="btn btn-warning btn-lg add-to-cart"
+        data-id="<%= product.id %>"
+        data-name="<%= product.name %>"
+        data-price="<%= product.price %>"
+        data-image="<%= product.image %>">
+        <i class="fa-solid fa-cart-shopping me-2"></i>
+        Add to Cart
+        </button>
+
+          <a href="/checkout" class="btn btn-dark btn-lg">
+            Buy Now
+          </a>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Related Products -->
+    <div class="mt-5 pt-5 border-top">
+
+      <h3 class="fw-bold mb-4">You May Also Like</h3>
+
+      <div class="row g-4">
+
+        <div class="col-md-4">
+          <div class="related-card p-3 text-center">
+            <h6>TEAM Savage Vest</h6>
+            <p class="text-warning fw-bold">R349.00</p>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="related-card p-3 text-center">
+            <h6>TEAM Savage Hoodie</h6>
+            <p class="text-warning fw-bold">R699.00</p>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="related-card p-3 text-center">
+            <h6>TEAM Gym Bag</h6>
+            <p class="text-warning fw-bold">R599.00</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<%- include("partials/footer") %>

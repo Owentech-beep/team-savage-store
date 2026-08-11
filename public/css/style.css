@@ -1,0 +1,337 @@
+:root{
+  --primary:#c89b3c;
+  --dark:#0a0a0a;
+  --card:#151515;
+}
+body{
+  font-family:"Poppins",sans-serif;
+  background:var(--dark);
+  color:white;
+}
+.navbar{
+  background:rgba(0,0,0,.92);
+  padding:1rem 0;
+  backdrop-filter:blur(8px);
+}
+.navbar-brand{
+  font-family:"Oswald",sans-serif;
+  font-size:1.4rem;
+}
+.nav-link{
+  color:white !important;
+  font-weight:500;
+  text-transform:uppercase;
+  font-size:.9rem;
+  margin:0 .4rem;
+}
+.nav-link:hover{
+  color:var(--primary) !important;
+}
+.hero{
+  min-height:100vh;
+  background:
+    linear-gradient(to right, rgba(0,0,0,.88), rgba(0,0,0,.45)),
+    url("/images/hero.jpeg") center/cover no-repeat;
+  padding-top:90px;
+}
+.hero-title{
+  font-family:"Oswald",sans-serif;
+  line-height:.95;
+}
+.btn-warning{
+  background:var(--primary);
+  border:none;
+  color:black;
+  font-weight:700;
+}
+.btn-warning:hover{
+  background:#d8ad53;
+  color:black;
+}
+.category-card{
+  background:#fff;
+  border-radius:16px;
+  transition:.3s ease;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+.category-card:hover{
+  transform:translateY(-6px);
+}
+.footer{
+  background:black;
+}
+.cart-count{
+  position:absolute;
+  top:-10px;
+  right:-12px;
+  background:var(--primary);
+  color:black;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  font-size:.7rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+}
+/*======Product card styling=====*/
+.shop-hero{
+  background:
+    linear-gradient(rgba(0,0,0,.7), rgba(0,0,0,.7)),
+    url("/images/hero.jpeg") center/cover;
+}
+.product-card{
+  background:white;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 10px 25px rgba(0,0,0,.08);
+  transition:.3s ease;
+}
+.product-card:hover{
+  transform:translateY(-8px);
+  box-shadow:0 20px 40px rgba(0,0,0,.15);
+}
+.product-image{
+  background:#f5f5f5;
+  height:260px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.product-image img{
+  max-height:240px;
+  object-fit:contain;
+  padding:1rem;
+}
+.product-details-image{
+  background:#f5f5f5;
+  border-radius:20px;
+  min-height:450px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.product-details-image img{
+  max-height:400px;
+  object-fit:contain;
+}
+.related-card{
+  background:#f8f8f8;
+  border-radius:16px;
+  transition:.3s ease;
+}
+.related-card:hover{
+  transform:translateY(-5px);
+}
+/*==cart count===*/
+.cart-count{
+  position:absolute;
+  top:-10px;
+  right:-12px;
+}
+/* ===============================
+   FEATURED PRODUCTS
+================================ */
+
+.featured-product-card{
+  background:#fff;
+  border-radius:22px;
+  overflow:hidden;
+  box-shadow:0 12px 30px rgba(0,0,0,.08);
+  transition:all .35s ease;
+}
+
+.featured-product-card:hover{
+  transform:translateY(-8px);
+  box-shadow:0 18px 40px rgba(0,0,0,.12);
+}
+
+.featured-product-image{
+  background:#f5f5f5;
+  height:260px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:1.5rem;
+}
+
+.featured-product-image img{
+  max-height:220px;
+  object-fit:contain;
+  transition:transform .35s ease;
+}
+
+.featured-product-card:hover .featured-product-image img{
+  transform:scale(1.05);
+}
+/* ===============================
+   ADMIN DASHBOARD
+================================ */
+.table th{
+  font-weight:600;
+}
+.card{
+  border-radius:18px;
+}
+.form-control,
+.form-select{
+  border-radius:12px;
+  padding:.75rem 1rem;
+}
+.btn{
+  border-radius:12px;
+}
+/* ===============================
+   PREMIUM ADMIN LAYOUT
+================================ */
+.admin-layout{
+  display:flex;
+  min-height:100vh;
+  background:#f4f6f9;
+}
+.admin-sidebar{
+  width:260px;
+  background:#0a0a0a;
+  color:white;
+  padding:2rem 1.5rem;
+  position:sticky;
+  top:0;
+  height:100vh;
+}
+.sidebar-brand{
+  font-family:"Oswald",sans-serif;
+  font-size:1.3rem;
+  font-weight:700;
+}
+.sidebar-nav{
+  display:flex;
+  flex-direction:column;
+  gap:.5rem;
+}
+.sidebar-link{
+  color:#cfcfcf;
+  text-decoration:none;
+  padding:.9rem 1rem;
+  border-radius:12px;
+  transition:.25s ease;
+  font-weight:500;
+}
+.sidebar-link:hover,
+.sidebar-link.active{
+  background:#c89b3c;
+  color:black;
+}
+.admin-main{
+  flex:1;
+  padding:2rem;
+  background:#f4f6f9;
+  color:#111;
+}
+
+.admin-main h1,
+.admin-main h2,
+.admin-main h3,
+.admin-main h4,
+.admin-main h5,
+.admin-main h6{
+  color:#111;
+}
+@media (max-width:992px){
+
+  .admin-layout{
+    flex-direction:column;
+  }
+  .admin-sidebar{
+    width:100%;
+    height:auto;
+    position:relative;
+  }
+  .sidebar-nav{
+    flex-direction:row;
+    flex-wrap:wrap;
+  }
+}
+/* ===============================
+   ABOUT & CONTACT
+================================ */
+.about-hero,
+.contact-hero{
+  min-height:55vh;
+  background:
+    linear-gradient(rgba(0,0,0,.78), rgba(0,0,0,.78)),
+    url("/images/hero.jpeg") center/cover;
+}
+.about-image-card{
+  background:#f8f8f8;
+  border-radius:24px;
+  min-height:350px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.feature-card,
+.contact-info-card{
+  background:#fff;
+  border-radius:18px;
+  box-shadow:0 10px 25px rgba(0,0,0,.08);
+  transition:.3s ease;
+}
+.feature-card:hover,
+.contact-info-card:hover{
+  transform:translateY(-5px);
+}
+/* ===============================
+   FLOATING WHATSAPP BUTTON
+================================ */
+
+.whatsapp-float{
+  position:fixed;
+  width:65px;
+  height:65px;
+  bottom:25px;
+  right:25px;
+  background:#25d366;
+  color:white;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:2rem;
+  text-decoration:none;
+  box-shadow:0 12px 30px rgba(0,0,0,.25);
+  z-index:9999;
+  transition:all .3s ease;
+  animation:whatsappPulse 2s infinite;
+}
+
+.whatsapp-float:hover{
+  transform:scale(1.12);
+  color:white;
+  background:#20bd5a;
+  animation:none;
+}
+@keyframes whatsappPulse{
+
+  0%{
+    box-shadow:0 0 0 0 rgba(37,211,102,.6);
+  }
+
+  70%{
+    box-shadow:0 0 0 18px rgba(37,211,102,0);
+  }
+
+  100%{
+    box-shadow:0 0 0 0 rgba(37,211,102,0);
+  }
+}
+@media (max-width:576px){
+
+  .whatsapp-float{
+    width:58px;
+    height:58px;
+    bottom:20px;
+    right:20px;
+    font-size:1.8rem;
+  }
+}
