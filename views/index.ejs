@@ -94,15 +94,13 @@
                                 View Product
                             </a>
 
-                            <button class="btn btn-warning add-to-cart"
-                                data-id="<%= product.id %>"
-                                data-name="<%= product.name %>"
-                                data-price="<%= product.price %>"
-                                data-image="<%= product.image %>">
+                            <a href="/product/<%= product.id %>"
+                                class="btn btn-warning">
+                                
+                                <i class="fa-solid fa-cart-shopping me-2"></i>
+                                Choose Size & Colour
 
-                                Add to Cart
-
-                            </button>
+                            </a>
 
                         </div>
 

@@ -1,9 +1,97 @@
 <%- include("partials/header") %>
 <%- include("partials/navbar") %>
 
-<div class="container py-5 mt-5">
-  <h1 class="fw-bold">Page Coming Soon</h1>
-  <p>This page is under construction.</p>
-</div>
+<section class="page-header py-5 text-white">
+  <div class="container text-center">
+
+    <p class="text-warning fw-bold text-uppercase mb-2">
+      TEAM SAVAGE
+    </p>
+
+    <h1 class="display-4 fw-bold mb-3">
+      <%= category %>
+    </h1>
+
+    <p class="lead text-light">
+      Explore our premium <%= category.toLowerCase() %> collection.
+    </p>
+
+  </div>
+</section>
+
+<section class="py-5 bg-white text-dark">
+  <div class="container">
+
+    <div class="row g-4">
+
+      <% if (products.length === 0) { %>
+
+        <div class="col-12 text-center py-5">
+
+          <i class="fa-solid fa-box-open fa-3x text-muted mb-3"></i>
+
+          <h4 class="fw-bold">No products available</h4>
+
+          <p class="text-muted">
+            Products for this category will be added soon.
+          </p>
+
+          <a href="/shop" class="btn btn-warning mt-3">
+            Back to Shop
+          </a>
+
+        </div>
+
+      <% } else { %>
+
+        <% products.forEach(product => { %>
+
+          <div class="col-md-6 col-lg-4">
+
+            <div class="product-card h-100">
+
+              <div class="product-image p-4 text-center">
+
+                <img src="<%= product.image %>"
+                     class="img-fluid"
+                     alt="<%= product.name %>">
+
+              </div>
+
+              <div class="p-4">
+
+                <p class="text-muted small mb-2">
+                  <%= product.category %>
+                </p>
+
+                <h5 class="fw-bold mb-2">
+                  <%= product.name %>
+                </h5>
+
+                <p class="text-warning fw-bold fs-5 mb-3">
+                  R<%= product.price %>.00
+                </p>
+
+                <a href="/product/<%= product.id %>"
+                   class="btn btn-warning w-100">
+
+                  View Product
+
+                </a>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        <% }) %>
+
+      <% } %>
+
+    </div>
+
+  </div>
+</section>
 
 <%- include("partials/footer") %>

@@ -21,8 +21,19 @@ app.get("/", (req, res) => {
 });
 
 app.get("/shop", (req, res) => {
+
+  const search = req.query.search || "";
+
+  const filteredProducts = products.filter((product) =>
+
+    product.name.toLowerCase().includes(search.toLowerCase()) ||
+
+    product.category.toLowerCase().includes(search.toLowerCase())
+  );
+
   res.render("shop", {
-    products,
+    products: filteredProducts,
+    search,
   });
 });
 
@@ -87,6 +98,20 @@ app.get("/checkout", (req, res) => {
 
 app.get("/about", (req, res) => {
   res.render("about");
+});
+
+app.get("/category/:name", (req, res) => {
+
+  const categoryName = req.params.name;
+
+  const filteredProducts = products.filter((product) =>
+    product.category.toLowerCase() === categoryName.toLowerCase()
+  );
+
+  res.render("category", {
+    category: categoryName,
+    products: filteredProducts,
+  });
 });
 
 app.get("/contact", (req, res) => {

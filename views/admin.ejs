@@ -2,7 +2,7 @@
 
 <div class="admin-layout">
 
-  <!-- Sidebar -->
+  <!-- Desktop Sidebar -->
   <aside class="admin-sidebar">
 
     <div class="sidebar-brand d-flex align-items-center mb-4">
@@ -45,6 +45,72 @@
     </nav>
 
   </aside>
+
+  <div class="offcanvas offcanvas-start d-lg-none"
+    tabindex="-1"
+    id="adminSidebar"
+    aria-labelledby="adminSidebarLabel">
+
+    <div class="offcanvas-header">
+
+      <h5 class="offcanvas-title fw-bold"
+        id="adminSidebarLabel">
+
+        <img src="/images/logo.jpeg"
+          alt="TEAM SAVAGE"
+          height="32"
+          class="me-2">
+
+        TEAM SAVAGE
+
+      </h5>
+
+      <button type="button"
+        class="btn-close"
+        data-bs-dismiss="offcanvas"
+        aria-label="Close"></button>
+
+    </div>
+
+    <div class="offcanvas-body">
+
+      <nav class="sidebar-nav d-flex flex-column gap-2">
+
+        <a href="/admin" class="sidebar-link active">
+          <i class="fa-solid fa-chart-line me-2"></i>
+          Dashboard
+        </a>
+
+        <a href="/shop" class="sidebar-link">
+          <i class="fa-solid fa-store me-2"></i>
+          Store
+        </a>
+
+        <a href="#" class="sidebar-link">
+          <i class="fa-solid fa-box me-2"></i>
+          Products
+        </a>
+
+        <a href="#" class="sidebar-link">
+          <i class="fa-solid fa-cart-shopping me-2"></i>
+          Orders
+        </a>
+
+        <a href="#" class="sidebar-link">
+          <i class="fa-solid fa-users me-2"></i>
+          Customers
+        </a>
+
+        <a href="#" class="sidebar-link">
+          <i class="fa-solid fa-gear me-2"></i>
+          Settings
+        </a>
+
+      </nav>
+
+    </div>
+
+  </div>
 
   <!-- Main Content -->
   <main class="admin-main">
@@ -102,24 +168,44 @@
         <form class="row g-3">
 
           <div class="col-md-6">
-            <input type="text" class="form-control" placeholder="Product name">
+            <label class="form-label">Product Name</label>
+            <input type="text"
+              class="form-control"
+              placeholder="Enter any product name"
+              required>
           </div>
 
-          <div class="col-md-3">
-            <select class="form-select">
-              <option>T-Shirts</option>
-              <option>Vests</option>
-              <option>Hoodies</option>
-              <option>Bags</option>
-            </select>
+          <div class="col-md-6">
+            <label class="form-label">Category (Optional)</label>
+            <input type="text"
+              class="form-control"
+              placeholder="e.g. Hoodies, Straps, Supplements">
           </div>
 
-          <div class="col-md-3">
-            <input type="number" class="form-control" placeholder="Price">
+          <div class="col-md-6">
+            <label class="form-label">Price</label>
+            <input type="number"
+              class="form-control"
+              placeholder="R499"
+              required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Stock</label>
+            <input type="number"
+              class="form-control"
+              placeholder="25">
           </div>
 
           <div class="col-12">
-            <button type="button" class="btn btn-warning px-4">
+            <label class="form-label">Description</label>
+            <textarea class="form-control"
+              rows="4"
+              placeholder="Write any product description"></textarea>
+          </div>
+
+          <div class="col-12">
+            <button class="btn btn-warning fw-semibold">
               <i class="fa-solid fa-plus me-2"></i>
               Add Product
             </button>
@@ -154,44 +240,44 @@
 
               <% products.forEach(product => { %>
 
-                <tr>
+              <tr>
 
-                  <td><%= product.id %></td>
+                <td><%= product.id %></td>
 
-                  <td class="fw-semibold">
-                    <%= product.name %>
-                  </td>
+                <td class="fw-semibold">
+                  <%= product.name %>
+                </td>
 
-                  <td>
-                    <span class="badge bg-secondary">
-                      <%= product.category %>
-                    </span>
-                  </td>
+                <td>
+                  <span class="badge bg-secondary">
+                    <%= product.category %>
+                  </span>
+                </td>
 
-                  <td class="fw-bold text-warning">
-                    R<%= product.price %>.00
-                  </td>
+                <td class="fw-bold text-warning">
+                  R<%= product.price %>.00
+                </td>
 
-                  <td>
-                    <div class="d-flex gap-2">
+                <td>
+                  <div class="d-flex gap-2">
 
-                      <a href="/product/<%= product.id %>"
-                         class="btn btn-sm btn-outline-dark">
-                        <i class="fa-solid fa-eye"></i>
-                      </a>
+                    <a href="/product/<%= product.id %>"
+                      class="btn btn-sm btn-outline-dark">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
 
-                      <button class="btn btn-sm btn-outline-warning">
-                        <i class="fa-solid fa-pen"></i>
-                      </button>
+                    <button class="btn btn-sm btn-outline-warning">
+                      <i class="fa-solid fa-pen"></i>
+                    </button>
 
-                      <button class="btn btn-sm btn-outline-danger">
-                        <i class="fa-solid fa-trash"></i>
-                      </button>
+                    <button class="btn btn-sm btn-outline-danger">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
 
-                    </div>
-                  </td>
+                  </div>
+                </td>
 
-                </tr>
+              </tr>
 
               <% }) %>
 

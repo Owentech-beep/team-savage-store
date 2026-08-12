@@ -36,23 +36,27 @@ function updateCartCount() {
 function addToCart(product) {
   const cart = getCart();
 
-  const existing = cart.find((item) => item.id === product.id);
+  // Match same product + same size + same colour
+  const existing = cart.find(
+    (item) =>
+      item.id === product.id &&
+      item.size === product.size &&
+      item.color === product.color,
+  );
 
   if (existing) {
-    existing.quantity += 1;
+    existing.quantity += product.quantity;
   } else {
     cart.push({
       ...product,
-      quantity: 1,
     });
   }
-
   saveCart(cart);
+
   updateCartCount();
 
   alert(`${product.name} added to cart!`);
 }
-
 // ===============================
 // RENDER CART PAGE
 // ===============================
@@ -95,7 +99,9 @@ function renderCartPage() {
           <div>
             <h5 class="mb-1">${item.name}</h5>
             <p class="text-muted mb-0">
-              Quantity: ${item.quantity}
+            Size: ${item.size || "N/A"} <br>
+             Colour: ${item.color || "N/A"} <br>
+             Quantity: ${item.quantity}
             </p>
           </div>
 
@@ -125,7 +131,6 @@ function renderCartPage() {
 // ===============================
 
 function renderCheckoutPage() {
-
   const container = document.getElementById("checkout-items");
 
   if (!container) return;
@@ -133,7 +138,6 @@ function renderCheckoutPage() {
   const cart = getCart();
 
   if (cart.length === 0) {
-
     container.innerHTML = `
       <div class="alert alert-secondary">
         Your cart is empty.
@@ -149,13 +153,13 @@ function renderCheckoutPage() {
 
   let subtotal = 0;
 
-  container.innerHTML = cart.map((item) => {
+  container.innerHTML = cart
+    .map((item) => {
+      const itemTotal = item.price * item.quantity;
 
-    const itemTotal = item.price * item.quantity;
+      subtotal += itemTotal;
 
-    subtotal += itemTotal;
-
-    return `
+      return `
       <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
 
         <div>
@@ -171,7 +175,8 @@ function renderCheckoutPage() {
 
       </div>
     `;
-  }).join("");
+    })
+    .join("");
 
   const deliveryFee = 100;
   const total = subtotal + deliveryFee;
@@ -190,20 +195,36 @@ function renderCheckoutPage() {
 // ===============================
 
 document.addEventListener("DOMContentLoaded", () => {
-
   // Update badge on every page
   updateCartCount();
 
   // Add-to-cart buttons
   document.querySelectorAll(".add-to-cart").forEach((button) => {
-
     button.addEventListener("click", () => {
+      const sizeSelect = document.querySelector(".product-size");
+      const colorSelect = document.querySelector(".product-color");
+      const quantityInput = document.querySelector(".product-quantity");
+
+      // Require size
+      if (sizeSelect && !sizeSelect.value) {
+        alert("Please select a size before adding to cart.");
+        return;
+      }
+
+      // Require colour
+      if (colorSelect && !colorSelect.value) {
+        alert("Please select a colour before adding to cart.");
+        return;
+      }
 
       const product = {
         id: parseInt(button.dataset.id),
         name: button.dataset.name,
         price: parseFloat(button.dataset.price),
         image: button.dataset.image,
+        size: sizeSelect ? sizeSelect.value : null,
+        color: colorSelect ? colorSelect.value : null,
+        quantity: quantityInput ? parseInt(quantityInput.value) : 1,
       };
 
       addToCart(product);
@@ -220,9 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const clearBtn = document.getElementById("clear-cart");
 
   if (clearBtn) {
-
     clearBtn.addEventListener("click", () => {
-
       localStorage.removeItem("cart");
 
       renderCartPage();

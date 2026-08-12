@@ -10,9 +10,11 @@
       <div class="col-lg-6">
 
         <div class="product-details-image p-4 text-center">
+
           <img src="<%= product.image %>"
                class="img-fluid"
                alt="<%= product.name %>">
+
         </div>
 
       </div>
@@ -37,31 +39,80 @@
           durability, and style during every workout session.
         </p>
 
-        <!-- Sizes -->
+        <!-- Size Selection -->
         <div class="mb-4">
 
-          <h6 class="fw-bold mb-3">Select Size</h6>
+          <label class="form-label fw-bold">
+            Select Size
+          </label>
 
-          <div class="d-flex flex-wrap gap-2">
+          <select class="form-select product-size" required>
 
-            <button class="btn btn-outline-dark">S</button>
-            <button class="btn btn-outline-dark">M</button>
-            <button class="btn btn-outline-dark">L</button>
-            <button class="btn btn-outline-dark">XL</button>
+            <option value="">Choose size</option>
 
-          </div>
+            <% if (product.sizes && product.sizes.length) { %>
+
+              <% product.sizes.forEach(size => { %>
+
+                <option value="<%= size %>">
+                  <%= size %>
+                </option>
+
+              <% }) %>
+
+            <% } %>
+
+          </select>
+
+        </div>
+
+        <!-- Colour Selection -->
+        <div class="mb-4">
+
+          <label class="form-label fw-bold">
+            Select Colour
+          </label>
+
+          <select class="form-select product-color" required>
+
+            <option value="">Choose colour</option>
+
+            <% if (product.colors && product.colors.length) { %>
+
+              <% product.colors.forEach(color => { %>
+
+                <option value="<%= color %>">
+                  <%= color %>
+                </option>
+
+              <% }) %>
+
+            <% } else { %>
+
+              <option value="Black">Black</option>
+              <option value="White">White</option>
+              <option value="Red">Red</option>
+
+            <% } %>
+
+          </select>
+
         </div>
 
         <!-- Quantity -->
         <div class="mb-4">
 
-          <h6 class="fw-bold mb-3">Quantity</h6>
+          <label class="form-label fw-bold">
+            Quantity
+          </label>
 
-          <div style="width:120px;">
+          <div style="width: 140px;">
+
             <input type="number"
-                   class="form-control"
+                   class="form-control product-quantity"
                    value="1"
                    min="1">
+
           </div>
 
         </div>
@@ -69,14 +120,16 @@
         <!-- Buttons -->
         <div class="d-grid gap-3">
 
-        <button class="btn btn-warning btn-lg add-to-cart"
-        data-id="<%= product.id %>"
-        data-name="<%= product.name %>"
-        data-price="<%= product.price %>"
-        data-image="<%= product.image %>">
-        <i class="fa-solid fa-cart-shopping me-2"></i>
-        Add to Cart
-        </button>
+          <button class="btn btn-warning btn-lg add-to-cart"
+                  data-id="<%= product.id %>"
+                  data-name="<%= product.name %>"
+                  data-price="<%= product.price %>"
+                  data-image="<%= product.image %>">
+
+            <i class="fa-solid fa-cart-shopping me-2"></i>
+            Add to Cart
+
+          </button>
 
           <a href="/checkout" class="btn btn-dark btn-lg">
             Buy Now
@@ -90,32 +143,56 @@
     <!-- Related Products -->
     <div class="mt-5 pt-5 border-top">
 
-      <h3 class="fw-bold mb-4">You May Also Like</h3>
+      <h3 class="fw-bold mb-4">
+        You May Also Like
+      </h3>
 
       <div class="row g-4">
 
         <div class="col-md-4">
+
           <div class="related-card p-3 text-center">
+
             <h6>TEAM Savage Vest</h6>
-            <p class="text-warning fw-bold">R349.00</p>
+
+            <p class="text-warning fw-bold">
+              R349.00
+            </p>
+
           </div>
+
         </div>
 
         <div class="col-md-4">
+
           <div class="related-card p-3 text-center">
+
             <h6>TEAM Savage Hoodie</h6>
-            <p class="text-warning fw-bold">R699.00</p>
+
+            <p class="text-warning fw-bold">
+              R699.00
+            </p>
+
           </div>
+
         </div>
 
         <div class="col-md-4">
+
           <div class="related-card p-3 text-center">
+
             <h6>TEAM Gym Bag</h6>
-            <p class="text-warning fw-bold">R599.00</p>
+
+            <p class="text-warning fw-bold">
+              R599.00
+            </p>
+
           </div>
+
         </div>
 
       </div>
+
     </div>
 
   </div>

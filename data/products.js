@@ -4,6 +4,8 @@ export const products = [
     name: "TEAM Savage T-Shirt",
     category: "T-Shirts",
     price: 399,
+    sizes: ["S", "M", "L", "XL"],
+    colors: ["Black", "White", "Red"],
     image: "/images/tshirt.jpg",
   },
   {
@@ -11,6 +13,8 @@ export const products = [
     name: "TEAM Savage Vest",
     category: "Vests",
     price: 349,
+    sizes: ["S", "M", "L", "XL"],
+    colors: ["Black", "White", "Red"],
     image: "/images/vest.jpg",
   },
   {
@@ -18,12 +22,16 @@ export const products = [
     name: "TEAM Savage Hoodie",
     category: "Hoodies",
     price: 699,
+    sizes: ["S", "M", "L", "XL"],
+    colors: ["Black", "White", "Red"],
     image: "/images/hoodie.jpg",
   },
   {
     id: 4,
     name: "Men's Leggings",
     category: "Men's Leggings",
+    sizes: ["S", "M", "L", "XL"],
+    colors: ["Black", "White", "Red"],
     price: 499,
     image: "/images/mens-leggings.jpg",
   },
@@ -32,6 +40,8 @@ export const products = [
     name: "Ladies Leggings",
     category: "Ladies Leggings",
     price: 499,
+    sizes: ["S", "M", "L", "XL"],
+    colors: ["Black", "White", "Red"],
     image: "/images/ladies-leggings.jpg",
   },
   {
@@ -39,6 +49,8 @@ export const products = [
     name: "TEAM Shaker Bottle",
     category: "Bottles",
     price: 249,
+    sizes: ["S", "M", "L", "XL"],
+    colors: ["Black", "White", "Red"],
     image: "/images/bottle.jpg",
   },
   {
@@ -46,6 +58,8 @@ export const products = [
     name: "TEAM Tumbler",
     category: "Tumblers",
     price: 299,
+    sizes: ["S", "M", "L", "XL"],
+    colors: ["Black", "White", "Red"],
     image: "/images/tumbler.jpg",
   },
   {
@@ -53,6 +67,8 @@ export const products = [
     name: "TEAM Gym Bag",
     category: "Bags",
     price: 599,
+    sizes: ["S", "M", "L", "XL"],
+    colors: ["Black", "White", "Red"],
     image: "/images/bag.jpg",
   },
   {
@@ -60,6 +76,8 @@ export const products = [
     name: "Gym Straps",
     category: "Gym Straps",
     price: 199,
+    sizes: ["S", "M", "L", "XL"],
+    colors: ["Black", "White", "Red"],
     image: "/images/straps.jpg",
   },
 ];

@@ -1,17 +1,74 @@
+/* ===============================
+   GLOBAL FIXED NAVBAR
+================================ */
+.navbar{
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-height: 72px;
+  background: rgba(0,0,0,.95) !important;
+  backdrop-filter: blur(10px);
+  z-index: 1050;
+}
+.navbar-brand img{
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+}
+/* Prevent mobile navbar shifting */
+html,
+body{
+  overflow-x: hidden;
+}
+/* ===============================
+   ABOUT & CONTACT HEROES
+================================ */
+.about-hero,
+.contact-hero{
+  min-height: 45vh;
+  padding-top: 90px;
+
+  background:
+    linear-gradient(
+      rgba(0,0,0,.75),
+      rgba(0,0,0,.75)
+    ),
+    url("/images/hero.jpeg") center/cover no-repeat;
+}
+
+@media (max-width:768px){
+
+  .about-hero,
+  .contact-hero{
+    padding-top: 72px; /*same as navbar height*/
+  }
+}
+/* Push pages below the fixed navbar */
 :root{
   --primary:#c89b3c;
   --dark:#0a0a0a;
   --card:#151515;
 }
+.text-warning{
+  color: var(--primary) !important;
+}
+
+.btn-warning{
+  background: var(--primary) !important;
+  border: none !important;
+  color: black !important;
+  font-weight: 700;
+}
+
+.btn-warning:hover{
+  background: #d8ad53 !important;
+  color: black !important;
+}
 body{
   font-family:"Poppins",sans-serif;
   background:var(--dark);
   color:white;
-}
-.navbar{
-  background:rgba(0,0,0,.92);
-  padding:1rem 0;
-  backdrop-filter:blur(8px);
 }
 .navbar-brand{
   font-family:"Oswald",sans-serif;
@@ -133,7 +190,6 @@ body{
 /* ===============================
    FEATURED PRODUCTS
 ================================ */
-
 .featured-product-card{
   background:#fff;
   border-radius:22px;
@@ -195,9 +251,7 @@ body{
   background:#0a0a0a;
   color:white;
   padding:2rem 1.5rem;
-  position:sticky;
-  top:0;
-  height:100vh;
+  min-height:100vh;
 }
 .sidebar-brand{
   font-family:"Oswald",sans-serif;
@@ -228,7 +282,6 @@ body{
   background:#f4f6f9;
   color:#111;
 }
-
 .admin-main h1,
 .admin-main h2,
 .admin-main h3,
@@ -237,101 +290,155 @@ body{
 .admin-main h6{
   color:#111;
 }
-@media (max-width:992px){
+/* ===============================
+   ADMIN MOBILE RESPONSIVE
+================================ */
+@media (max-width:991px){
 
   .admin-layout{
     flex-direction:column;
   }
+
   .admin-sidebar{
     width:100%;
-    height:auto;
-    position:relative;
+    min-height:100vh;
+    margin-bottom:0;
   }
+
+  .admin-main{
+    padding:1rem;
+  }
+
   .sidebar-nav{
     flex-direction:row;
     flex-wrap:wrap;
+    gap:.5rem;
   }
 }
-/* ===============================
-   ABOUT & CONTACT
-================================ */
-.about-hero,
-.contact-hero{
-  min-height:55vh;
-  background:
-    linear-gradient(rgba(0,0,0,.78), rgba(0,0,0,.78)),
-    url("/images/hero.jpeg") center/cover;
-}
-.about-image-card{
-  background:#f8f8f8;
-  border-radius:24px;
-  min-height:350px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.feature-card,
-.contact-info-card{
-  background:#fff;
-  border-radius:18px;
-  box-shadow:0 10px 25px rgba(0,0,0,.08);
-  transition:.3s ease;
-}
-.feature-card:hover,
-.contact-info-card:hover{
-  transform:translateY(-5px);
-}
+
 /* ===============================
    FLOATING WHATSAPP BUTTON
 ================================ */
 
 .whatsapp-float{
-  position:fixed;
-  width:65px;
-  height:65px;
-  bottom:25px;
-  right:25px;
-  background:#25d366;
-  color:white;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:2rem;
-  text-decoration:none;
-  box-shadow:0 12px 30px rgba(0,0,0,.25);
-  z-index:9999;
-  transition:all .3s ease;
-  animation:whatsappPulse 2s infinite;
+  position: fixed;
+  width: 65px;
+  height: 65px;
+  bottom: 25px;
+  right: 25px;
+
+  background: #25d366;
+  color: white;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 2rem;
+  text-decoration: none;
+
+  box-shadow: 0 12px 30px rgba(0,0,0,.25);
+
+  z-index: 9999;
+
+  transition: all .3s ease;
+
+  animation: whatsappPulse 2s infinite;
 }
 
 .whatsapp-float:hover{
-  transform:scale(1.12);
-  color:white;
-  background:#20bd5a;
-  animation:none;
+  transform: scale(1.12);
+  color: white;
+  background: #20bd5a;
+  animation: none;
 }
+
 @keyframes whatsappPulse{
 
   0%{
-    box-shadow:0 0 0 0 rgba(37,211,102,.6);
+    box-shadow: 0 0 0 0 rgba(37,211,102,.6);
   }
 
   70%{
-    box-shadow:0 0 0 18px rgba(37,211,102,0);
+    box-shadow: 0 0 0 18px rgba(37,211,102,0);
   }
 
   100%{
-    box-shadow:0 0 0 0 rgba(37,211,102,0);
+    box-shadow: 0 0 0 0 rgba(37,211,102,0);
   }
 }
+
 @media (max-width:576px){
 
   .whatsapp-float{
-    width:58px;
-    height:58px;
-    bottom:20px;
-    right:20px;
-    font-size:1.8rem;
+    width: 58px;
+    height: 58px;
+    bottom: 20px;
+    right: 20px;
+    font-size: 1.8rem;
+  }
+}
+/* ===============================
+   ADMIN MOBILE RESPONSIVE
+================================ */
+
+@media (max-width:991px){
+
+  .admin-layout{
+    display:block;
+  }
+
+  .admin-sidebar{
+    width:100%;
+    min-height:auto;
+    margin-bottom:1rem;
+  }
+
+  .admin-main{
+    padding:1rem;
+  }
+}
+
+/* Restore old dashboard sidebar style */
+
+.offcanvas .sidebar-link{
+  display:flex;
+  align-items:center;
+  padding:.9rem 1rem;
+  border-radius:12px;
+  color:#cfcfcf;
+  text-decoration:none;
+  font-weight:500;
+  transition:.25s ease;
+}
+
+.offcanvas .sidebar-link:hover,
+.offcanvas .sidebar-link.active{
+  background:#c89b3c;
+  color:black;
+}
+/* ===============================
+   NAVBAR SEARCH
+================================ */
+
+.navbar .input-group{
+  width:260px;
+}
+
+.navbar .form-control{
+  border-radius:50px 0 0 50px;
+  border:none;
+}
+
+.navbar .btn{
+  border-radius:0 50px 50px 0;
+}
+
+@media (max-width:991px){
+
+  .navbar .input-group{
+    width:100%;
   }
 }
