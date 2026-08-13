@@ -117,15 +117,17 @@
 
                         <div class="d-grid gap-3">
 
-                            <button class="btn btn-warning btn-lg">
-                                <i class="fa-solid fa-credit-card me-2"></i>
-                                Pay with Card
+                            <button onclick="placeOrder('EFT')"
+                                class="btn btn-warning w-100 btn-lg">
+                                <i
+                                    class="fa-solid fa-building-columns me-2"></i>
+                                Pay with EFT
                             </button>
 
-                            <button class="btn btn-outline-dark btn-lg">
-                                <i
-                                    class="fa-solid fa-mobile-screen-button me-2"></i>
-                                Pay with EFT
+                            <button onclick="placeOrder('Card')"
+                                class="btn btn-outline-dark w-100 btn-lg">
+                                <i class="fa-solid fa-credit-card me-2"></i>
+                                Pay with Card
                             </button>
 
                         </div>
@@ -133,12 +135,59 @@
                         <p class="small text-muted mt-3 mb-0">
                             Secure payments powered by TEAM SAVAGE Commerce.
                         </p>
-
                     </div>
                 </div>
-
             </div>
 
+            <script>
+async function placeOrder(paymentMethod) {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+  if (cart.length === 0) {
+    alert("Your cart is empty");
+    return;
+  }
+
+  const total = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const orderData = {
+    customerName: "Guest Customer",
+    customerEmail: "guest@example.com",
+    paymentMethod,
+    items: cart,
+    total,
+  };
+
+  try {
+    const response = await fetch("/api/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(orderData),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      localStorage.removeItem("cart");
+
+      alert(`🔥 Order placed successfully using ${paymentMethod}!`);
+
+     window.location.href = `/order-success/${result.orderId}`;
+    } else {
+      alert("Error placing order");
+    }
+
+  } catch (error) {
+    console.error(error);
+    alert("Something went wrong");
+  }
+}
+</script>
         </div>
 
     </div>

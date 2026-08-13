@@ -134,7 +134,7 @@
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body">
             <p class="text-muted mb-1">Total Products</p>
-            <h2 class="fw-bold"><%= products.length %></h2>
+            <h2 class="fw-bold mb-0"><%= products.length %></h2>
           </div>
         </div>
       </div>
@@ -143,7 +143,7 @@
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body">
             <p class="text-muted mb-1">Orders Today</p>
-            <h2 class="fw-bold">0</h2>
+            <h2 class="fw-bold mb-0"><%= ordersToday %></h2>
           </div>
         </div>
       </div>
@@ -152,7 +152,7 @@
         <div class="card shadow-sm border-0 h-100">
           <div class="card-body">
             <p class="text-muted mb-1">Revenue</p>
-            <h2 class="fw-bold">R0.00</h2>
+            <h2 class="fw-bold mb-0">R<%= revenue.toFixed(2) %></h2>
           </div>
         </div>
       </div>
@@ -165,47 +165,54 @@
 
         <h4 class="fw-bold mb-4">Add New Product</h4>
 
-        <form class="row g-3">
+        <form action="/admin/add-product" method="POST" class="row g-3">
 
           <div class="col-md-6">
             <label class="form-label">Product Name</label>
             <input type="text"
+              name="name"
               class="form-control"
               placeholder="Enter any product name"
               required>
           </div>
 
           <div class="col-md-6">
-            <label class="form-label">Category (Optional)</label>
+            <label class="form-label">Category</label>
             <input type="text"
+              name="category"
               class="form-control"
-              placeholder="e.g. Hoodies, Straps, Supplements">
+              placeholder="e.g. Hoodies, Straps, Supplements"
+              required>
           </div>
 
           <div class="col-md-6">
             <label class="form-label">Price</label>
             <input type="number"
+              name="price"
               class="form-control"
-              placeholder="R499"
+              placeholder="499"
               required>
           </div>
 
           <div class="col-md-6">
-            <label class="form-label">Stock</label>
-            <input type="number"
+            <label class="form-label">Image URL</label>
+            <input type="text"
+              name="image"
               class="form-control"
-              placeholder="25">
+              placeholder="/images/tshirt.jpeg"
+              required>
           </div>
 
           <div class="col-12">
             <label class="form-label">Description</label>
-            <textarea class="form-control"
+            <textarea name="description"
+              class="form-control"
               rows="4"
               placeholder="Write any product description"></textarea>
           </div>
 
           <div class="col-12">
-            <button class="btn btn-warning fw-semibold">
+            <button type="submit" class="btn btn-warning fw-semibold">
               <i class="fa-solid fa-plus me-2"></i>
               Add Product
             </button>
@@ -217,64 +224,119 @@
     </div>
 
     <!-- Products Table -->
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0 mt-5">
+
       <div class="card-body p-4">
 
-        <h4 class="fw-bold mb-4">Current Products</h4>
+        <h4 class="fw-bold mb-4">
+          <i class="fa-solid fa-box me-2 text-warning"></i>
+          Customer Orders
+        </h4>
+
+        <% if (orders.length > 0) { %>
 
         <div class="table-responsive">
 
-          <table class="table align-middle">
+          <table class="table table-hover align-middle">
 
             <thead class="table-dark">
+
               <tr>
-                <th>ID</th>
-                <th>Product</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Actions</th>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Status</th>
+                <th>Date</th>
               </tr>
+
             </thead>
 
             <tbody>
 
-              <% products.forEach(product => { %>
+              <% orders.forEach(order => { %>
 
               <tr>
 
-                <td><%= product.id %></td>
-
                 <td class="fw-semibold">
-                  <%= product.name %>
+                  <%= order._id.toString().slice(-6).toUpperCase() %>
+                </td>
+
+                <td>
+                  <div class="fw-semibold">
+                    <%= order.customerName || "Guest Customer" %>
+                  </div>
+
+                  <small class="text-muted">
+                    <%= order.customerEmail || "No email" %>
+                  </small>
+                </td>
+
+                <td>
+
+                  <% order.items.forEach(item => { %>
+
+                  <div class="small">
+                    <%= item.name %> × <%= item.quantity %>
+                  </div>
+
+                  <% }) %>
+
+                </td>
+
+                <td class="fw-bold text-warning">
+                  R<%= order.total.toFixed(2) %>
                 </td>
 
                 <td>
                   <span class="badge bg-secondary">
-                    <%= product.category %>
+                    <%= order.paymentMethod || "N/A" %>
                   </span>
                 </td>
 
-                <td class="fw-bold text-warning">
-                  R<%= product.price %>.00
+                <td>
+
+                  <form action="/admin/orders/<%= order._id %>/status"
+                    method="POST"
+                    class="d-flex gap-2">
+
+                    <select name="status"
+                      class="form-select form-select-sm">
+
+                      <option value="Pending"
+                        <%=order.status === "Pending" ? "selected" : "" %>>
+                        Pending
+                      </option>
+
+                      <option value="Processing"
+                        <%=order.status === "Processing" ? "selected" : "" %>>
+                        Processing
+                      </option>
+
+                      <option value="Shipped"
+                        <%=order.status === "Shipped" ? "selected" : "" %>>
+                        Shipped
+                      </option>
+
+                      <option value="Delivered"
+                        <%=order.status === "Delivered" ? "selected" : "" %>>
+                        Delivered
+                      </option>
+
+                    </select>
+
+                    <button type="submit"
+                      class="btn btn-warning btn-sm">
+                      Update
+                    </button>
+
+                  </form>
+
                 </td>
 
                 <td>
-                  <div class="d-flex gap-2">
-
-                    <a href="/product/<%= product.id %>"
-                      class="btn btn-sm btn-outline-dark">
-                      <i class="fa-solid fa-eye"></i>
-                    </a>
-
-                    <button class="btn btn-sm btn-outline-warning">
-                      <i class="fa-solid fa-pen"></i>
-                    </button>
-
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="fa-solid fa-trash"></i>
-                    </button>
-
-                  </div>
+                  <%= new Date(order.createdAt).toLocaleDateString() %>
                 </td>
 
               </tr>
@@ -287,8 +349,109 @@
 
         </div>
 
+        <% } else { %>
+
+        <div class="alert alert-secondary mb-0">
+          No orders have been placed yet.
+        </div>
+
+        <% } %>
+
       </div>
     </div>
+
+    <!-- Products Management -->
+<div class="card shadow-sm border-0 mt-5">
+
+  <div class="card-body p-4">
+
+    <h4 class="fw-bold mb-4">
+      <i class="fa-solid fa-shirt me-2 text-warning"></i>
+      Store Products
+    </h4>
+
+    <% if (products && products.length > 0) { %>
+
+      <div class="row g-3">
+
+        <% products.forEach(product => { %>
+
+          <div class="col-md-6 col-lg-4">
+
+            <div class="card h-100 border-0 shadow-sm">
+
+              <div class="card-body d-flex flex-column">
+
+                <div class="d-flex align-items-center mb-3">
+
+                  <img src="<%= product.image %>"
+                       alt="<%= product.name %>"
+                       class="rounded me-3"
+                       style="width: 70px; height: 70px; object-fit: cover;">
+
+                  <div>
+
+                    <h6 class="fw-bold mb-1">
+                      <%= product.name %>
+                    </h6>
+
+                    <small class="text-muted text-uppercase">
+                      <%= product.category %>
+                    </small>
+
+                  </div>
+
+                </div>
+
+                <p class="fw-bold text-warning fs-5 mb-3">
+                  R<%= product.price %>.00
+                </p>
+
+                <div class="mt-auto d-grid gap-2">
+
+                  <a href="/product/<%= product._id %>"
+                     class="btn btn-outline-dark btn-sm">
+                    View Product
+                  </a>
+
+                  <!-- 🔥 DELETE BUTTON -->
+                  <form action="/admin/delete-product/<%= product._id %>"
+                        method="POST"
+                        onsubmit="return confirm('Delete this product?')">
+
+                    <button type="submit"
+                            class="btn btn-danger btn-sm w-100">
+
+                      <i class="fa-solid fa-trash me-2"></i>
+                      Delete Product
+
+                    </button>
+
+                  </form>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        <% }) %>
+
+      </div>
+
+    <% } else { %>
+
+      <div class="alert alert-secondary mb-0">
+        No products available yet.
+      </div>
+
+    <% } %>
+
+  </div>
+
+</div>
 
   </main>
 

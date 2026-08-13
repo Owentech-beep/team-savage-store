@@ -1,8 +1,6 @@
 // ===============================
 // CART STORAGE
 // ===============================
-
-// Get cart from localStorage
 function getCart() {
   return JSON.parse(localStorage.getItem("cart")) || [];
 }
@@ -23,10 +21,12 @@ function updateCartCount() {
     return total + item.quantity;
   }, 0);
 
-  // Update all cart badges
-  document.querySelectorAll(".cart-count").forEach((badge) => {
-    badge.textContent = totalItems;
-  });
+ document.querySelectorAll(".cart-count").forEach((badge) => {
+  badge.textContent = totalItems;
+
+  // Hide badge if empty
+  badge.style.display = totalItems > 0 ? "flex" : "none";
+});
 }
 
 // ===============================
@@ -39,7 +39,7 @@ function addToCart(product) {
   // Match same product + same size + same colour
   const existing = cart.find(
     (item) =>
-      item.id === product.id &&
+      item.id === product._id &&
       item.size === product.size &&
       item.color === product.color,
   );
@@ -218,7 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const product = {
-        id: parseInt(button.dataset.id),
+        id: button.dataset.id, // MongoDB _id is a string
         name: button.dataset.name,
         price: parseFloat(button.dataset.price),
         image: button.dataset.image,
@@ -250,3 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// Make functions available globally
+window.updateCartCount = updateCartCount;
+window.addToCart = addToCart;

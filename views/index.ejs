@@ -38,94 +38,109 @@
 
 <!-- Featured Products -->
 <section class="py-5 bg-white text-dark">
-    <div class="container">
+  <div class="container">
 
-        <div class="text-center mb-5">
+    <div class="text-center mb-5">
 
-            <p class="text-warning fw-bold text-uppercase mb-2">
-                Best Sellers
-            </p>
+      <p class="text-warning fw-bold text-uppercase mb-2">
+        Best Sellers
+      </p>
 
-            <h2 class="display-5 fw-bold mb-3">
-                Featured Products
-            </h2>
+      <h2 class="display-5 fw-bold mb-3">
+        Featured Products
+      </h2>
 
-            <p class="text-muted mx-auto" style="max-width: 650px;">
-                Our most popular gym wear and accessories trusted by athletes,
-                bodybuilders, and fitness enthusiasts across South Africa.
-            </p>
+      <p class="text-muted mx-auto" style="max-width: 650px;">
+        Our most popular gym wear and accessories trusted by athletes,
+        bodybuilders, and fitness enthusiasts across South Africa.
+      </p>
 
-        </div>
+    </div>
 
-        <div class="row g-4">
+    <div class="row g-4">
 
-            <% products.slice(0, 4).forEach(product => { %>
+      <% products.slice(0, 4).forEach(product => { %>
 
-            <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-3">
 
-                <div class="featured-product-card h-100">
+          <div class="featured-product-card h-100 d-flex flex-column">
 
-                    <div class="featured-product-image">
+            <div class="featured-product-image d-flex align-items-center justify-content-center">
 
-                        <img src="<%= product.image %>"
-                            class="img-fluid"
-                            alt="<%= product.name %>">
-
-                    </div>
-
-                    <div class="p-4 text-center">
-
-                        <p class="text-muted small mb-2">
-                            <%= product.category %>
-                        </p>
-
-                        <h5 class="fw-bold mb-3">
-                            <%= product.name %>
-                        </h5>
-
-                        <p class="text-warning fw-bold fs-5 mb-4">
-                            R<%= product.price %>.00
-                        </p>
-
-                        <div class="d-grid gap-2">
-
-                            <a href="/product/<%= product.id %>"
-                                class="btn btn-outline-dark">
-                                View Product
-                            </a>
-
-                            <a href="/product/<%= product.id %>"
-                                class="btn btn-warning">
-                                
-                                <i class="fa-solid fa-cart-shopping me-2"></i>
-                                Choose Size & Colour
-
-                            </a>
-
-                        </div>
-
-                    </div>
-
-                </div>
+              <img src="<%= product.image %>"
+                   class="img-fluid"
+                   alt="<%= product.name %>">
 
             </div>
 
-            <% }) %>
+            <div class="p-4 text-center d-flex flex-column flex-grow-1">
+
+              <p class="text-muted small mb-2 text-uppercase">
+                <%= product.category %>
+              </p>
+
+              <h5 class="fw-bold mb-3">
+                <%= product.name %>
+              </h5>
+
+              <p class="text-warning fw-bold fs-5 mb-4">
+                R<%= product.price %>.00
+              </p>
+
+              <!-- Push buttons to the bottom -->
+              <div class="mt-auto d-grid gap-2">
+
+                <a href="/product/<%= product._id %>"
+                   class="btn btn-outline-dark">
+                  View Product
+                </a>
+
+                <% if (product.category.toLowerCase() === "clothing") { %>
+
+                  <a href="/product/<%= product._id %>"
+                     class="btn btn-warning">
+
+                    <i class="fa-solid fa-shirt me-2"></i>
+                    Choose Size & Colour
+
+                  </a>
+
+                <% } else { %>
+
+                  <a href="/product/<%= product._id %>"
+                     class="btn btn-warning">
+
+                    <i class="fa-solid fa-cart-shopping me-2"></i>
+                    Add to Cart
+
+                  </a>
+
+                <% } %>
+
+              </div>
+
+            </div>
+
+          </div>
 
         </div>
 
-        <div class="text-center mt-5">
-
-            <a href="/shop" class="btn btn-dark btn-lg px-5">
-
-                <i class="fa-solid fa-store me-2"></i>
-                Shop All Products
-
-            </a>
-
-        </div>
+      <% }) %>
 
     </div>
+
+    <div class="text-center mt-5">
+
+      <a href="/shop" class="btn btn-dark btn-lg px-5">
+
+        <i class="fa-solid fa-store me-2"></i>
+        Shop All Products
+
+      </a>
+
+    </div>
+
+  </div>
 </section>
 
 <%- include("partials/footer") %>

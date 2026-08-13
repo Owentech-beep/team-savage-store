@@ -43,7 +43,7 @@
 
             <div class="d-grid gap-2">
 
-              <a href="/product/<%= product.id %>"
+              <a href="/product/<%= product._id %>"
                 class="btn btn-outline-dark">
 
                 View Product
@@ -56,21 +56,18 @@
               <!-- Accessories: allow direct add to cart -->
 
               <button class="btn btn-warning add-to-cart"
-                data-id="<%= product.id %>"
+                data-id="<%= product._id %>"
                 data-name="<%= product.name %>"
                 data-price="<%= product.price %>"
                 data-image="<%= product.image %>">
-
-                <i class="fa-solid fa-cart-shopping me-2"></i>
                 Add to Cart
-
               </button>
 
               <% } else { %>
 
               <!-- Clothing: require size & colour selection -->
 
-              <a href="/product/<%= product.id %>"
+              <a href="/product/<%= product._id %>"
                 class="btn btn-warning">
 
                 <i class="fa-solid fa-cart-shopping me-2"></i>
