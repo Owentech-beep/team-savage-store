@@ -13,6 +13,7 @@ const productSchema = new mongoose.Schema({
 
   category: {
     type: String,
+    enum: ["Clothing", "Accessories"],
     required: true,
   },
 
@@ -21,17 +22,22 @@ const productSchema = new mongoose.Schema({
     required: true,
   },
 
-  description: {
-    type: String,
-    default: "",
+  // 🔥 Additional gallery images
+  gallery: [String],
+
+  description: String,
+
+  // 🔥 Available colours
+  colors: [String],
+
+  // 🔥 Available sizes
+  sizes: [String],
+
+  featured: {
+    type: Boolean,
+    default: false,
   },
 
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+}, { timestamps: true });
 
-const Product = mongoose.model("Product", productSchema);
-
-export default Product;
+export default mongoose.model("Product", productSchema);

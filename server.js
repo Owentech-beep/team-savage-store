@@ -1,9 +1,14 @@
 import express from "express";
 import { products } from "./data/products.js";
-import nodemailer from "nodemailer";
 import mongoose from "mongoose";
 import Product from "./models/Product.js";
 import Order from "./models/Order.js";
+import { sendEmail } from "./utils/mailer.js";
+import multer from "multer";
+import path from "path";
+import { sendOrderConfirmation } from "./utils/mailer.js";
+import session from "express-session";
+import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -23,11 +28,41 @@ try {
 }
 
 app.use(express.urlencoded({ extended: true }));
+
+// ===============================
+// MULTER CONFIG
+// ===============================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public/uploads");
+  },
+
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
+app.use(session({
+  secret: "team-savage-secret-key",
+  resave: false,
+  saveUninitialized: false,
+}));
+
 // Static files
 app.use(express.static("public"));
 
 // EJS
 app.set("view engine", "ejs");
+
+function isAdmin(req, res, next) {
+  if (req.session.isAdmin) {
+    return next();
+  }
+
+  res.redirect("/login");
+}
 
 // Routes
 app.get("/", async (req, res) => {
@@ -68,8 +103,16 @@ app.get("/accessories", async (req, res) => {
   res.render("accessories", { products });
 });
 
+
+
 app.get("/product/:id", async (req, res) => {
   try {
+
+    // 🔥 Check if ID is valid
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).send("Invalid product ID");
+    }
+
     const product = await Product.findById(req.params.id);
 
     if (!product) {
@@ -80,6 +123,7 @@ app.get("/product/:id", async (req, res) => {
 
   } catch (error) {
     console.error(error);
+
     res.status(500).send("Error loading product");
   }
 });
@@ -92,7 +136,7 @@ app.get("/cart", (req, res) => {
 // ===============================
 // ADMIN DASHBOARD
 // ===============================
-app.get("/admin", async (req, res) => {
+app.get("/admin", isAdmin , async(req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
     const orders = await Order.find().sort({ createdAt: -1 });
@@ -127,7 +171,7 @@ app.get("/admin", async (req, res) => {
 // ===============================
 // UPDATE ORDER STATUS
 // ===============================
-app.post("/admin/orders/:id/status", async (req, res) => {
+app.post("/admin/orders/:id/status", isAdmin , async(req, res) => {
   try {
 
     await Order.findByIdAndUpdate(req.params.id, {
@@ -145,7 +189,7 @@ app.post("/admin/orders/:id/status", async (req, res) => {
   }
 });
 
-app.get("/admin", async (req, res) => {
+app.get("/admin", isAdmin, async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
     const orders = await Order.find().sort({ createdAt: -1 });
@@ -212,7 +256,13 @@ app.get("/contact", (req, res) => {
 });
 
 app.post("/contact", async (req, res) => {
-  const { firstName, lastName, email, subject, message } = req.body;
+  const {
+    firstName,
+    lastName,
+    email,
+    subject,
+    message
+  } = req.body;
 
   console.log({
     firstName,
@@ -222,27 +272,137 @@ app.post("/contact", async (req, res) => {
     message,
   });
 
-  res.redirect("/contact");
-});
-
-app.post("/admin/add-product", async (req, res) => {
   try {
-    await Product.create({
-      name: req.body.name,
-      price: Number(req.body.price),
-      category: req.body.category,
-      image: req.body.image,
-      description: req.body.description,
+
+    await sendEmail({
+
+      // Your TEAM SAVAGE email
+      to: process.env.EMAIL_USER,
+
+      // Customer's email
+      replyTo: email,
+
+      // Email subject
+      subject: `TEAM SAVAGE Enquiry: ${subject}`,
+
+      // Email content
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 600px;
+          margin: auto;
+          padding: 20px;
+        ">
+
+          <h2 style="color: #f0ad00;">
+            🔥 New TEAM SAVAGE Customer Enquiry
+          </h2>
+
+          <hr>
+
+          <p>
+            <strong>Customer Name:</strong><br>
+            ${firstName} ${lastName}
+          </p>
+
+          <p>
+            <strong>Customer Email:</strong><br>
+            ${email}
+          </p>
+
+          <p>
+            <strong>Subject:</strong><br>
+            ${subject}
+          </p>
+
+          <hr>
+
+          <h3>Customer Message</h3>
+
+          <div style="
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+          ">
+            <p>
+              ${message}
+            </p>
+          </div>
+
+          <hr>
+
+          <p style="color: #777; font-size: 14px;">
+            This message was sent from the
+            TEAM SAVAGE website.
+          </p>
+
+        </div>
+      `,
     });
 
-    console.log("🔥 Product saved to MongoDB");
+    console.log("📧 Customer enquiry email sent!");
 
-    res.redirect("/admin");
+    res.redirect("/contact");
+
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Error saving product");
+
+    console.error(
+      "❌ Failed to send enquiry email:",
+      error
+    );
+
+    res.status(500).send(
+      "Failed to send enquiry email."
+    );
   }
 });
+
+app.post(
+  "/admin/add-product",
+  isAdmin,
+  upload.fields([
+  { name: "image", maxCount: 1 },
+  { name: "gallery", maxCount: 3 },
+]),
+  async (req, res) => {
+    try {
+            await Product.create({
+        name: req.body.name,
+        price: Number(req.body.price),
+        category: req.body.category,
+
+        image: `/uploads/${req.files.image[0].filename}`,
+
+        gallery: req.files.gallery
+          ? req.files.gallery.map(
+              file => `/uploads/${file.filename}`
+            )
+          : [],
+
+        description: req.body.description,
+
+        colors: req.body.colors
+          ? req.body.colors.split(",").map(c => c.trim())
+          : [],
+
+        sizes: req.body.sizes
+          ? req.body.sizes.split(",").map(s => s.trim())
+          : [],
+
+        featured: req.body.featured === "true",
+      });
+
+      console.log("🔥 Product saved with image upload");
+
+      res.redirect("/admin");
+
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).send("Error saving product");
+    }
+  }
+);
 
 app.post("/api/orders", express.json(), async (req, res) => {
   try {
@@ -264,7 +424,7 @@ app.post("/api/orders", express.json(), async (req, res) => {
   }
 });
 
-app.post("/admin/delete-product/:id", async (req, res) => {
+app.post("/admin/delete-product/:id", isAdmin, async (req, res) => {
   try {
 
     await Product.findByIdAndDelete(req.params.id);
@@ -280,6 +440,32 @@ app.post("/admin/delete-product/:id", async (req, res) => {
   }
 });
 
+// ==========================================
+// RESET TEAM SAVAGE STORE
+// ==========================================
+
+app.post("/admin/reset-store", isAdmin, async (req, res) => {
+  try {
+
+    // Delete all products
+    await Product.deleteMany({});
+
+    // Delete all customer orders
+    await Order.deleteMany({});
+
+    console.log("🔥 TEAM SAVAGE store has been completely reset");
+
+    res.redirect("/admin");
+
+  } catch (error) {
+
+    console.error("❌ Error resetting store:", error);
+
+    res.status(500).send("Error resetting store");
+
+  }
+});
+
 app.post("/api/orders", express.json(), async (req, res) => {
   try {
     const order = await Order.create(req.body);
@@ -299,6 +485,50 @@ app.post("/api/orders", express.json(), async (req, res) => {
       message: "Error saving order",
     });
   }
+});
+
+// ===============================
+// LOGIN PAGE
+// ===============================
+app.get("/login", (req, res) => {
+  res.render("login", { error: null });
+});
+
+// ===============================
+// LOGIN HANDLER
+// ===============================
+const adminEmail = "teamsavage.online@gmail.com";
+
+// Create a hashed password once
+const adminPasswordHash = await bcrypt.hash("Meathotmail789", 10);
+
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  const validPassword = await bcrypt.compare(
+    password,
+    adminPasswordHash
+  );
+
+  if (email === adminEmail && validPassword) {
+
+    req.session.isAdmin = true;
+
+    return res.redirect("/admin");
+  }
+
+  res.render("login", {
+    error: "Invalid email or password",
+  });
+});
+
+// ===============================
+// LOGOUT
+// ===============================
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/");
+  });
 });
 
 app.listen(port, () => {

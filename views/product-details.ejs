@@ -1,67 +1,142 @@
 <%- include("partials/header") %>
 <%- include("partials/navbar") %>
 
-<section class="py-5 bg-white text-dark">
+<section class="product-details-page py-5 bg-white text-dark">
   <div class="container">
 
-    <div class="row align-items-center g-5">
+    <div class="row g-5">
 
       <!-- Product Image -->
       <div class="col-lg-6">
 
-        <div class="product-details-image p-4 shadow-sm">
-          <img src="<%= product.image %>"
-               alt="<%= product.name %>"
-               class="img-fluid rounded">
+        <!-- MAIN IMAGE -->
+        <div class="main-product-image mb-3">
+
+          <img id="mainProductImage"
+            src="<%= product.image %>"
+            class="img-fluid rounded shadow-sm"
+            alt="<%= product.name %>">
+
         </div>
 
-      </div>
+        <!-- THUMBNAILS -->
+        <% if (product.gallery && product.gallery.length > 0) { %>
 
-      <!-- Product Info -->
-      <div class="col-lg-6">
+        <div class="d-flex gap-3 flex-wrap">
 
-        <p class="text-uppercase text-secondary fw-semibold mb-2">
-          <%= product.category %>
-        </p>
+          <!-- Main image thumbnail -->
+          <img src="<%= product.image %>"
+            class="product-thumb active-thumb"
+            onclick="changeProductImage(this)"
+            alt="Main image">
 
-        <h1 class="display-5 fw-bold mb-3">
-          <%= product.name %>
-        </h1>
+          <!-- Gallery thumbnails -->
+          <% product.gallery.forEach(image => { %>
 
-        <h2 class="text-warning fw-bold mb-4">
-          R<%= product.price %>.00
-        </h2>
+          <img src="<%= image %>"
+            class="product-thumb"
+            onclick="changeProductImage(this)"
+            alt="Gallery image">
 
-        <p class="lead text-muted mb-4">
-          <%= product.description || "No description available for this product." %>
-        </p>
+          <% }) %>
 
-        <% if (product.category.toLowerCase() === "clothing") { %>
-
-          <div class="mb-4">
-
-            <label class="form-label fw-semibold">Select Size</label>
-
-            <select id="size" class="form-select">
-              <option value="">Choose a size</option>
-              <option>S</option>
-              <option>M</option>
-              <option>L</option>
-              <option>XL</option>
-            </select>
-
-          </div>
+        </div>
 
         <% } %>
 
-        <button id="add-to-cart-btn"
-                class="btn btn-warning btn-lg px-5"
-                data-id="<%= product._id %>"
-                data-name="<%= product.name %>"
-                data-price="<%= product.price %>"
-                data-image="<%= product.image %>">
+      </div>
 
-          <i class="fa-solid fa-cart-plus me-2"></i>
+      <div class="col-lg-6 product-info">
+
+        <h1 class="fw-bold mb-3">
+          <%= product.name %>
+        </h1>
+
+        <p class="text-warning fw-bold fs-3 mb-3">
+          R<%= product.price %>.00
+        </p>
+
+        <p class="text-muted mb-4">
+          <%= product.description %>
+        </p>
+
+        <!-- 🔥 AVAILABLE SIZES -->
+        <% if (product.sizes && product.sizes.length > 0) { %>
+
+        <div class="mb-3">
+
+          <label class="form-label fw-bold">
+            Available Sizes
+          </label>
+
+          <select class="form-select product-size">
+
+            <option value>Choose Size</option>
+
+            <% product.sizes.forEach(size => { %>
+
+            <option value="<%= size %>">
+              <%= size %>
+            </option>
+
+            <% }) %>
+
+          </select>
+
+        </div>
+
+        <% } %>
+
+        <!-- 🔥 AVAILABLE COLOURS -->
+        <% if (product.colors && product.colors.length > 0) { %>
+
+        <div class="mb-4">
+
+          <label class="form-label fw-bold">
+            Available Colours
+          </label>
+
+          <select class="form-select product-color">
+
+            <option value>Choose Colour</option>
+
+            <% product.colors.forEach(color => { %>
+
+            <option value="<%= color %>">
+              <%= color %>
+            </option>
+
+            <% }) %>
+
+          </select>
+
+        </div>
+
+        <% } %>
+
+        <!-- 🔥 QUANTITY -->
+        <div class="mb-4">
+
+          <label class="form-label fw-bold">
+            Quantity
+          </label>
+
+          <input type="number"
+            value="1"
+            min="1"
+            class="form-control product-quantity"
+            style="max-width: 120px;">
+
+        </div>
+
+        <!-- 🔥 ADD TO CART -->
+        <button class="btn btn-warning btn-lg add-to-cart"
+          data-id="<%= product._id %>"
+          data-name="<%= product.name %>"
+          data-price="<%= product.price %>"
+          data-image="<%= product.image %>">
+
+          <i class="fa-solid fa-cart-shopping me-2"></i>
           Add to Cart
 
         </button>
@@ -74,32 +149,15 @@
 </section>
 
 <script>
-document.getElementById("add-to-cart-btn")
-  .addEventListener("click", function () {
+  function changeProductImage(src) {
 
-    const sizeSelect = document.getElementById("size");
-    const size = sizeSelect ? sizeSelect.value : "";
+    document.getElementById("mainProductImage").src = src;
 
-    if (sizeSelect && !size) {
-      alert("Please select a size first.");
-      return;
-    }
+    document.querySelectorAll(".product-thumb")
+      .forEach(thumb => thumb.classList.remove("active-thumb"));
 
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-    cart.push({
-      id: this.dataset.id,
-      name: this.dataset.name,
-      price: Number(this.dataset.price),
-      image: this.dataset.image,
-      quantity: 1,
-      size
-    });
-
-    localStorage.setItem("cart", JSON.stringify(cart));
-
-    alert("🔥 Added to cart!");
-  });
+    event.target.classList.add("active-thumb");
+  }
 </script>
 
 <%- include("partials/footer") %>

@@ -13,7 +13,8 @@
     </h1>
 
     <p class="lead text-light">
-      Questions, orders, collaborations, or support — we’d love to hear from you.
+      Questions, orders, collaborations, or support — we’d love to hear from
+      you.
     </p>
 
   </div>
@@ -75,8 +76,8 @@
         </div>
 
         <a href="https://wa.me/27747392310"
-           class="btn btn-success btn-lg w-100"
-           target="_blank">
+          class="btn btn-success btn-lg w-100"
+          target="_blank">
 
           <i class="fa-brands fa-whatsapp me-2"></i>
           Chat on WhatsApp
@@ -94,45 +95,84 @@
 
             <h3 class="fw-bold mb-4">Send Us a Message</h3>
 
-            <form action="/contact" method="POST">
+            <form action="https://formsubmit.co/teamsavage.online@gmail.com"
+              method="POST">
+
+              <!-- FormSubmit Settings -->
+              <input type="hidden"
+                name="_subject"
+                value="🔥 TEAM SAVAGE Customer Enquiry">
+
+              <input type="hidden"
+                name="_captcha"
+                value="false">
+
+              <input type="hidden"
+                name="_template"
+                value="table">
+
+              <input type="hidden"
+                name="_next"
+                value="http://localhost:3000/contact">
 
               <div class="row g-3">
 
                 <div class="col-md-6">
                   <label class="form-label">First Name</label>
-                  <input type="text" name="firstName" class="form-control" required>
+
+                  <input type="text"
+                    name="firstName"
+                    class="form-control"
+                    required>
                 </div>
 
                 <div class="col-md-6">
                   <label class="form-label">Last Name</label>
-                  <input type="text" name="lastName" class="form-control" required>
+
+                  <input type="text"
+                    name="lastName"
+                    class="form-control"
+                    required>
                 </div>
 
                 <div class="col-12">
                   <label class="form-label">Email Address</label>
-                  <input type="email" name="email" class="form-control" required>
+
+                  <input type="email"
+                    name="email"
+                    class="form-control"
+                    required>
                 </div>
 
                 <div class="col-12">
                   <label class="form-label">Subject</label>
-                  <input type="text" name="subject" class="form-control" required>
+
+                  <input type="text"
+                    name="subject"
+                    class="form-control"
+                    required>
                 </div>
 
                 <div class="col-12">
                   <label class="form-label">Message</label>
+
                   <textarea name="message"
-                            rows="6"
-                            class="form-control"
-                            required></textarea>
+                    rows="6"
+                    class="form-control"
+                    required></textarea>
                 </div>
 
                 <div class="col-12">
-                  <button type="submit" class="btn btn-warning btn-lg w-100">
+
+                  <button type="submit"
+                    class="btn btn-warning btn-lg w-100">
 
                     <i class="fa-solid fa-paper-plane me-2"></i>
+
                     Send Message
 
                   </button>
+
                 </div>
 
               </div>

@@ -1,75 +1,136 @@
 <%- include("partials/header") %>
 <%- include("partials/navbar") %>
 
-<section class="py-5 bg-light min-vh-100 d-flex align-items-center">
-  <div class="container">
+<!-- Order Confirmation -->
+<section class="bg-light py-5 min-vh-100">
+
+  <div class="container py-5">
 
     <div class="row justify-content-center">
 
-      <div class="col-lg-6">
+      <div class="col-12 col-md-10 col-lg-7 col-xl-6">
 
-        <div class="card shadow border-0 text-center">
+        <!-- Confirmation Card -->
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
 
-          <div class="card-body p-5">
+          <!-- Top Success Section -->
+          <div class="card-body text-center p-4 p-md-5">
 
+            <!-- Success Icon -->
             <div class="mb-4">
-              <i class="fa-solid fa-circle-check text-success fa-5x"></i>
+
+              <div class="d-inline-flex align-items-center justify-content-center
+                          bg-success bg-opacity-10 rounded-circle"
+                   style="width: 100px; height: 100px;">
+
+                <i class="fa-solid fa-circle-check text-success fa-4x"></i>
+
+              </div>
+
             </div>
 
-            <h1 class="fw-bold mb-3">
+            <!-- Heading -->
+            <h1 class="display-6 fw-bold mb-3">
               Order Confirmed!
             </h1>
 
-            <p class="text-muted mb-4">
-              Thank you for shopping with <strong>TEAM SAVAGE</strong>.
+            <p class="text-muted lead mb-4">
+              Thank you for shopping with
+              <strong class="text-dark">TEAM SAVAGE</strong>.
               Your order has been received successfully.
             </p>
 
-            <div class="bg-light rounded p-3 mb-4">
+            <!-- Order Number -->
+            <div class="bg-light border rounded-3 p-4 mb-4">
 
-              <p class="mb-2">
-                <strong>Order Number:</strong>
+              <p class="text-muted text-uppercase small fw-bold mb-2">
+                Order Number
               </p>
 
-              <h5 class="text-warning mb-0">
+              <h4 class="fw-bold text-warning mb-0">
                 #<%= order._id.toString().slice(-6).toUpperCase() %>
-              </h5>
+              </h4>
 
             </div>
 
-            <div class="row text-center mb-4">
+            <!-- Order Information -->
+            <div class="row g-3 mb-4">
 
+              <!-- Status -->
               <div class="col-6">
 
-                <p class="small text-muted mb-1">Status</p>
+                <div class="border rounded-3 p-3 h-100">
 
-                <p class="fw-bold mb-0">
-                  <%= order.status %>
-                </p>
+                  <p class="text-muted small mb-2">
+                    Status
+                  </p>
+
+                  <span class="badge bg-warning text-dark px-3 py-2">
+                    <%= order.status %>
+                  </span>
+
+                </div>
 
               </div>
 
+              <!-- Total -->
               <div class="col-6">
 
-                <p class="small text-muted mb-1">Total</p>
+                <div class="border rounded-3 p-3 h-100">
 
-                <p class="fw-bold text-warning mb-0">
-                  R<%= order.total.toFixed(2) %>
-                </p>
+                  <p class="text-muted small mb-2">
+                    Total
+                  </p>
+
+                  <h5 class="fw-bold text-warning mb-0">
+                    R<%= order.total.toFixed(2) %>
+                  </h5>
+
+                </div>
 
               </div>
 
             </div>
 
+            <!-- Confirmation Message -->
+            <div class="alert alert-success border-0 rounded-3 text-start mb-4">
+
+              <div class="d-flex align-items-start">
+
+                <i class="fa-solid fa-envelope me-3 mt-1"></i>
+
+                <div>
+
+                  <strong>What's next?</strong>
+
+                  <p class="mb-0 small mt-1">
+                    We'll process your order and keep you updated
+                    about its delivery status.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- Buttons -->
             <div class="d-grid gap-3">
 
-              <a href="/shop" class="btn btn-warning btn-lg">
+              <a href="/shop"
+                 class="btn btn-warning btn-lg fw-semibold">
+
                 <i class="fa-solid fa-store me-2"></i>
                 Continue Shopping
+
               </a>
 
-              <a href="/" class="btn btn-outline-dark">
+              <a href="/"
+                 class="btn btn-outline-dark">
+
+                <i class="fa-solid fa-house me-2"></i>
                 Back to Home
+
               </a>
 
             </div>
@@ -78,11 +139,20 @@
 
         </div>
 
+        <!-- Small Footer Text -->
+        <p class="text-center text-muted small mt-4 mb-0">
+
+          Thank you for choosing
+          <strong>TEAM SAVAGE</strong> 💪🔥
+
+        </p>
+
       </div>
 
     </div>
 
   </div>
+
 </section>
 
 <%- include("partials/footer") %>
