@@ -2,8 +2,8 @@ import express from "express";
 import { products } from "./data/products.js";
 import nodemailer from "nodemailer";
 import mongoose from "mongoose";
-import Product from "./models/Product.js";
-import Order from "./models/Order.js";
+import Product from "./models/product.js";
+import Order from "./models/order.js";
 import dotenv from "dotenv";
 
 dotenv.config();
