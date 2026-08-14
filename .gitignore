@@ -1,15 +1,2 @@
-# Dependencies
-node_modules/
-
-# Environment variables
+node_modules
 .env
-
-# Logs
-*.log
-
-# VS Code
-.vscode/
-
-# System files
-.DS_Store
-Thumbs.db
