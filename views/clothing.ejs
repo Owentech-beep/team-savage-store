@@ -26,67 +26,66 @@
 
       <% if (products.length > 0) { %>
 
-        <% products.forEach(product => { %>
+      <% products.forEach(product => { %>
 
-          <div class="col-md-6 col-lg-4 col-xl-3">
+      <div class="col-md-6 col-lg-4 col-xl-3">
 
-            <div class="product-card h-100 d-flex flex-column">
+        <div class="featured-product-card h-100 d-flex flex-column">
 
-              <div class="product-image d-flex align-items-center justify-content-center">
-                <img src="<%= product.image %>"
-                     class="img-fluid"
-                     alt="<%= product.name %>">
-              </div>
+          <div class="featured-product-image">
+            <img src="<%= product.image %>"
+              alt="<%= product.name %>">
+          </div>
 
-              <div class="p-3 d-flex flex-column flex-grow-1">
+          <div class="p-3 d-flex flex-column flex-grow-1">
 
-                <p class="small text-uppercase text-secondary mb-1">
-                  <%= product.category %>
-                </p>
+            <p class="small text-uppercase text-secondary mb-1">
+              <%= product.category %>
+            </p>
 
-                <h5 class="fw-bold mb-2">
-                  <%= product.name %>
-                </h5>
+            <h5 class="fw-bold mb-2">
+              <%= product.name %>
+            </h5>
 
-                <p class="fw-bold text-warning fs-5 mb-3">
-                  R<%= product.price %>.00
-                </p>
+            <p class="fw-bold text-warning fs-5 mb-3">
+              R<%= product.price %>.00
+            </p>
 
-                <!-- Push buttons to bottom -->
-                <div class="mt-auto d-grid gap-2">
+            <!-- Push buttons to bottom -->
+            <div class="mt-auto d-grid gap-2">
 
-                  <a href="/product/<%= product._id %>"
-                     class="btn btn-outline-dark">
-                    View Product
-                  </a>
+              <a href="/product/<%= product._id %>"
+                class="btn btn-outline-dark">
+                View Product
+              </a>
 
-                  <a href="/product/<%= product._id %>"
-                     class="btn btn-warning">
+              <a href="/product/<%= product._id %>"
+                class="btn btn-warning">
 
-                    <i class="fa-solid fa-shirt me-2"></i>
-                    Select Size & Add to Cart
+                <i class="fa-solid fa-shirt me-2"></i>
+                Select Size & Add to Cart
 
-                  </a>
-
-                </div>
-
-              </div>
+              </a>
 
             </div>
 
           </div>
 
-        <% }) %>
+        </div>
+
+      </div>
+
+      <% }) %>
 
       <% } else { %>
 
-        <div class="col-12 text-center">
+      <div class="col-12 text-center">
 
-          <div class="alert alert-warning">
-            No clothing products available yet.
-          </div>
-
+        <div class="alert alert-warning">
+          No clothing products available yet.
         </div>
+
+      </div>
 
       <% } %>
 

@@ -5,16 +5,17 @@
   <div class="container text-center">
 
     <p class="text-warning fw-bold text-uppercase mb-3">
-  TEAM SAVAGE
-</p>
+      TEAM SAVAGE
+    </p>
 
-<h1 class="display-3 fw-bold text-white mb-4">
-  Accessories Collection
-</h1>
+    <h1 class="display-3 fw-bold text-white mb-4">
+      Accessories Collection
+    </h1>
 
-<p class="lead text-light">
-  Complete your setup with bottles, bags, straps, and performance accessories.
-</p>
+    <p class="lead text-light">
+      Complete your setup with bottles, bags, straps, and performance
+      accessories.
+    </p>
 
   </div>
 </section>
@@ -26,62 +27,59 @@
 
       <% if (products.length > 0) { %>
 
-        <% products.forEach(product => { %>
+      <% products.forEach(product => { %>
 
-          <div class="col-md-6 col-lg-4 col-xl-3">
+      <div class="col-md-6 col-lg-4 col-xl-3">
 
-            <div class="product-card h-100">
+        <div class="featured-product-card h-100">
 
-              <div class="product-image">
-                <img src="<%= product.image %>"
-                     class="img-fluid"
-                     alt="<%= product.name %>">
-              </div>
+          <div class="featured-product-image">
+            <img src="<%= product.image %>"
+              alt="<%= product.name %>">
+          </div>
 
-              <div class="p-3">
+          <div class="p-3">
 
-                <p class="small text-uppercase text-secondary mb-1">
-                  <%= product.category %>
-                </p>
+            <p class="small text-uppercase text-secondary mb-1">
+              <%= product.category %>
+            </p>
 
-                <h5 class="fw-bold mb-2">
-                  <%= product.name %>
-                </h5>
+            <h5 class="fw-bold mb-2">
+              <%= product.name %>
+            </h5>
 
-                <p class="fw-bold text-warning fs-5 mb-3">
-                  R<%= product.price %>.00
-                </p>
+            <p class="fw-bold text-warning fs-5 mb-3">
+              R<%= product.price %>.00
+            </p>
 
-                <div class="d-grid gap-2">
+            <div class="d-grid gap-2">
 
-                  <a href="/product/<%= product._id %>"
-                     class="btn btn-outline-dark">
-                    View Product
-                  </a>
-
-                </div>
-
-              </div>
+              <a href="/product/<%= product._id %>"
+                class="btn btn-outline-dark">
+                View Product
+              </a>
 
             </div>
 
           </div>
 
-        <% }) %>
+        </div>
+
+      </div>
+
+      <% }) %>
 
       <% } else { %>
 
-        <div class="col-12 text-center">
-          <div class="alert alert-warning">
-            No clothing products available yet.
-          </div>
+      <div class="col-12 text-center">
+        <div class="alert alert-warning">
+          No clothing products available yet.
         </div>
+      </div>
 
       <% } %>
 
     </div>
-
-    
 
   </div>
 </section>

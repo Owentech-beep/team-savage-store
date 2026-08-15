@@ -13,71 +13,76 @@
 
     <div class="row g-4">
 
-      <% products.forEach(product => { %>
+  <% products.forEach(product => { %>
 
-      <div class="col-md-6 col-lg-4 col-xl-3">
+    <div class="col-md-6 col-lg-3">
 
-        <div class="product-card h-100">
+      <div class="featured-product-card h-100 d-flex flex-column">
 
-          <div class="product-image">
+        <!-- PRODUCT IMAGE -->
 
-            <img src="<%= product.image %>"
-              class="img-fluid"
-              alt="<%= product.name %>">
+        <div class="featured-product-image d-flex align-items-center justify-content-center">
 
-          </div>
+          <img src="<%= product.image %>"
+               class="img-fluid"
+               alt="<%= product.name %>">
 
-          <div class="p-3">
+        </div>
 
-            <p class="small text-uppercase text-secondary mb-1">
-              <%= product.category %>
-            </p>
 
-            <h5 class="fw-bold mb-2">
-              <%= product.name %>
-            </h5>
+        <!-- PRODUCT INFO -->
 
-            <p class="fw-bold text-warning fs-5 mb-3">
-              R<%= product.price %>.00
-            </p>
+        <div class="p-4 text-center d-flex flex-column flex-grow-1">
 
-            <div class="d-grid gap-2">
+          <p class="text-muted small mb-2 text-uppercase">
+            <%= product.category %>
+          </p>
 
-              <a href="/product/<%= product._id %>"
-                class="btn btn-outline-dark">
+          <h5 class="fw-bold mb-3">
+            <%= product.name %>
+          </h5>
 
-                View Product
+          <p class="text-warning fw-bold fs-5 mb-4">
+            R<%= product.price %>.00
+          </p>
 
-              </a>
 
-              <% if (["Bags", "Bottles", "Tumblers",
-              "Gym Straps"].includes(product.category)) { %>
+          <!-- BUTTONS -->
 
-              <!-- Accessories: allow direct add to cart -->
+          <div class="mt-auto d-grid gap-2">
+
+            <a href="/product/<%= product._id %>"
+               class="btn btn-outline-dark">
+
+              View Product
+
+            </a>
+
+
+            <% if (["Bags", "Bottles", "Tumblers", "Gym Straps"].includes(product.category)) { %>
 
               <button class="btn btn-warning add-to-cart"
-                data-id="<%= product._id %>"
-                data-name="<%= product.name %>"
-                data-price="<%= product.price %>"
-                data-image="<%= product.image %>">
-                Add to Cart
-              </button>
-
-              <% } else { %>
-
-              <!-- Clothing: require size & colour selection -->
-
-              <a href="/product/<%= product._id %>"
-                class="btn btn-warning">
+                      data-id="<%= product._id %>"
+                      data-name="<%= product.name %>"
+                      data-price="<%= product.price %>"
+                      data-image="<%= product.image %>">
 
                 <i class="fa-solid fa-cart-shopping me-2"></i>
+                Add to Cart
+
+              </button>
+
+            <% } else { %>
+
+              <a href="/product/<%= product._id %>"
+                 class="btn btn-warning">
+
+                <i class="fa-solid fa-shirt me-2"></i>
                 Choose Size & Colour
 
               </a>
 
-              <% } %>
-
-            </div>
+            <% } %>
 
           </div>
 
@@ -85,11 +90,11 @@
 
       </div>
 
-      <% }) %>
-
     </div>
 
-  </div>
+  <% }) %>
+
+</div>
 </section>
 
 <%- include("partials/footer") %>
