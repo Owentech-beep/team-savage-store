@@ -16,46 +16,74 @@
 
                         <h4 class="fw-bold mb-4">Customer Information</h4>
 
-                        <form>
+                        <form id="checkout-form">
 
                             <div class="row g-3">
 
                                 <div class="col-md-6">
                                     <label class="form-label">First Name</label>
-                                    <input type="text" class="form-control">
+                                    <input
+                                        type="text"
+                                        name="firstName"
+                                        class="form-control"
+                                        required>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label">Last Name</label>
-                                    <input type="text" class="form-control">
+                                    <input
+                                        type="text"
+                                        name="lastName"
+                                        class="form-control"
+                                        required>
                                 </div>
 
                                 <div class="col-12">
                                     <label class="form-label">Email</label>
-                                    <input type="email" class="form-control">
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        class="form-control"
+                                        required>
                                 </div>
 
                                 <div class="col-12">
                                     <label class="form-label">Phone
                                         Number</label>
-                                    <input type="tel" class="form-control">
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        class="form-control"
+                                        required>
                                 </div>
 
                                 <div class="col-12">
                                     <label class="form-label">Street
                                         Address</label>
-                                    <input type="text" class="form-control">
+                                    <input
+                                        type="text"
+                                        name="street"
+                                        class="form-control"
+                                        required>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label">City</label>
-                                    <input type="text" class="form-control">
+                                    <input
+                                        type="text"
+                                        name="city"
+                                        class="form-control"
+                                        required>
                                 </div>
 
                                 <div class="col-md-3">
                                     <label class="form-label">Province</label>
-                                    <select class="form-select" name="province"
+
+                                    <select
+                                        class="form-select"
+                                        name="province"
                                         required>
+
                                         <option value>Province</option>
                                         <option>Eastern Cape</option>
                                         <option>Free State</option>
@@ -66,13 +94,19 @@
                                         <option>North West</option>
                                         <option>Northern Cape</option>
                                         <option>Western Cape</option>
+
                                     </select>
                                 </div>
 
                                 <div class="col-md-3">
                                     <label class="form-label">Postal
                                         Code</label>
-                                    <input type="text" class="form-control">
+
+                                    <input
+                                        type="text"
+                                        name="postalCode"
+                                        class="form-control"
+                                        required>
                                 </div>
 
                             </div>
@@ -117,17 +151,23 @@
 
                         <div class="d-grid gap-3">
 
-                            <button onclick="placeOrder('EFT')"
+                            <button
+                                type="button"
+                                onclick="startCheckout('EFT')"
                                 class="btn btn-warning w-100 btn-lg">
+
                                 <i
                                     class="fa-solid fa-building-columns me-2"></i>
                                 Pay with EFT
+
                             </button>
 
-                            <button onclick="placeOrder('Card')"
+                            <button onclick="payWithPayFast()"
                                 class="btn btn-outline-dark w-100 btn-lg">
+
                                 <i class="fa-solid fa-credit-card me-2"></i>
                                 Pay with Card
+
                             </button>
 
                         </div>
@@ -140,54 +180,351 @@
             </div>
 
             <script>
-async function placeOrder(paymentMethod) {
-  const cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-  if (cart.length === 0) {
-    alert("Your cart is empty");
-    return;
-  }
+async function getCustomerDetails() {
 
-  const total = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+    return {
 
-  const orderData = {
-    customerName: "Guest Customer",
-    customerEmail: "guest@example.com",
-    paymentMethod,
-    items: cart,
-    total,
-  };
+        firstName:
+            document.querySelector('[name="firstName"]').value.trim(),
 
-  try {
-    const response = await fetch("/api/orders", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(orderData),
-    });
+        lastName:
+            document.querySelector('[name="lastName"]').value.trim(),
 
-    const result = await response.json();
+        email:
+            document.querySelector('[name="email"]').value.trim(),
 
-    if (result.success) {
-      localStorage.removeItem("cart");
+        phone:
+            document.querySelector('[name="phone"]').value.trim(),
 
-      alert(`🔥 Order placed successfully using ${paymentMethod}!`);
+        street:
+            document.querySelector('[name="street"]').value.trim(),
 
-     window.location.href = `/order-success/${result.orderId}`;
-    } else {
-      alert("Error placing order");
+        city:
+            document.querySelector('[name="city"]').value.trim(),
+
+        province:
+            document.querySelector('[name="province"]').value,
+
+        postalCode:
+            document.querySelector('[name="postalCode"]').value.trim(),
+
+    };
+
+}
+
+
+async function createOrder(paymentMethod) {
+
+    const cart =
+        JSON.parse(localStorage.getItem("cart")) || [];
+
+
+    if (cart.length === 0) {
+
+        alert("Your cart is empty.");
+
+        return null;
+
     }
 
-  } catch (error) {
-    console.error(error);
-    alert("Something went wrong");
-  }
+
+    const form =
+        document.getElementById("checkout-form");
+
+
+    // Make sure all required fields are filled
+
+    if (!form.checkValidity()) {
+
+        form.reportValidity();
+
+        return null;
+
+    }
+
+
+    const customer =
+        await getCustomerDetails();
+
+
+    const subtotal = cart.reduce(
+        (sum, item) =>
+            sum + Number(item.price) * Number(item.quantity),
+        0
+    );
+
+
+    const deliveryFee = 100;
+
+
+    const total =
+        subtotal + deliveryFee;
+
+
+    const orderData = {
+
+        customerName:
+            `${customer.firstName} ${customer.lastName}`,
+
+        customerEmail:
+            customer.email,
+
+        customerPhone:
+            customer.phone,
+
+        address: {
+
+            street:
+                customer.street,
+
+            city:
+                customer.city,
+
+            province:
+                customer.province,
+
+            postalCode:
+                customer.postalCode,
+
+        },
+
+        items: cart,
+
+        subtotal:
+
+            subtotal,
+
+        deliveryFee:
+
+            deliveryFee,
+
+        total:
+
+            total,
+
+        paymentMethod:
+
+            paymentMethod,
+
+    };
+
+
+    const response = await fetch(
+        "/api/orders",
+        {
+
+            method: "POST",
+
+            headers: {
+
+                "Content-Type":
+                    "application/json",
+
+            },
+
+            body:
+                JSON.stringify(orderData),
+
+        }
+    );
+
+
+    const result =
+        await response.json();
+
+
+    if (!response.ok || !result.success) {
+
+        throw new Error(
+            result.message ||
+            "Unable to create order."
+        );
+
+    }
+
+
+    console.log(
+        "🔥 Order created:",
+        result.orderId
+    );
+
+
+    return result.orderId;
+
 }
+
+
+async function payWithPayFast() {
+
+    try {
+
+        console.log(
+            "💳 Starting PayFast payment..."
+        );
+
+
+        // 1. Create pending order
+
+        const orderId =
+            await createOrder("PayFast");
+
+
+        if (!orderId) {
+
+            return;
+
+        }
+
+
+        // 2. Ask server to create PayFast request
+
+        const response =
+            await fetch(
+                "/api/payfast/create",
+                {
+
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json",
+
+                    },
+
+                    body:
+                        JSON.stringify({
+                            orderId: orderId
+                        }),
+
+                }
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok || !result.success) {
+
+            throw new Error(
+                result.message ||
+                "Unable to start PayFast payment."
+            );
+
+        }
+
+
+        console.log(
+            "🔥 PayFast payment created"
+        );
+
+
+        // 3. Create PayFast form
+
+        const form =
+            document.createElement("form");
+
+
+        form.method = "POST";
+
+
+        form.action =
+            result.payfastUrl;
+
+
+        // 4. Add PayFast fields
+
+        Object.entries(
+            result.paymentData
+        ).forEach(([key, value]) => {
+
+            const input =
+                document.createElement("input");
+
+
+            input.type =
+                "hidden";
+
+
+            input.name =
+                key;
+
+
+            input.value =
+                value;
+
+
+            form.appendChild(input);
+
+        });
+
+
+        // 5. Add form to page
+
+        document.body.appendChild(form);
+
+
+        // 6. Send customer to PayFast
+
+        form.submit();
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ PayFast error:",
+            error
+        );
+
+
+        alert(
+            "We couldn't start the payment. Please try again."
+        );
+
+    }
+
+}
+
+
+async function placeOrder(paymentMethod) {
+
+    try {
+
+        const orderId =
+            await createOrder(paymentMethod);
+
+
+        if (!orderId) {
+
+            return;
+
+        }
+
+
+        localStorage.removeItem("cart");
+
+
+        window.location.href =
+            `/order-success/${orderId}`;
+
+
+    } catch (error) {
+
+        console.error(error);
+
+
+        alert(
+            "Something went wrong while placing your order."
+        );
+
+    }
+
+}
+
 </script>
+
         </div>
 
     </div>

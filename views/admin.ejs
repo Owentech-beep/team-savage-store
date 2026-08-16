@@ -285,7 +285,10 @@
       </div>
     </div>
 
-    <!-- Products Table -->
+    <!-- ========================================= -->
+    <!-- CUSTOMER ORDERS -->
+    <!-- ========================================= -->
+
     <div class="card shadow-sm border-0 mt-5">
 
       <div class="card-body p-4">
@@ -295,7 +298,7 @@
           Customer Orders
         </h4>
 
-        <% if (orders.length > 0) { %>
+        <% if (orders && orders.length > 0) { %>
 
         <div class="table-responsive">
 
@@ -309,7 +312,8 @@
                 <th>Items</th>
                 <th>Total</th>
                 <th>Payment</th>
-                <th>Status</th>
+                <th>Payment Status</th>
+                <th>Order Status</th>
                 <th>Date</th>
               </tr>
 
@@ -321,11 +325,14 @@
 
               <tr>
 
+                <!-- ORDER ID -->
                 <td class="fw-semibold">
                   <%= order._id.toString().slice(-6).toUpperCase() %>
                 </td>
 
+                <!-- CUSTOMER -->
                 <td>
+
                   <div class="fw-semibold">
                     <%= order.customerName || "Guest Customer" %>
                   </div>
@@ -333,9 +340,13 @@
                   <small class="text-muted">
                     <%= order.customerEmail || "No email" %>
                   </small>
+
                 </td>
 
+                <!-- ITEMS -->
                 <td>
+
+                  <% if (order.items && order.items.length > 0) { %>
 
                   <% order.items.forEach(item => { %>
 
@@ -345,50 +356,98 @@
 
                   <% }) %>
 
+                  <% } else { %>
+
+                  <span class="text-muted">
+                    No items
+                  </span>
+
+                  <% } %>
+
                 </td>
 
+                <!-- TOTAL -->
                 <td class="fw-bold text-warning">
-                  R<%= order.total.toFixed(2) %>
+                  R<%= Number(order.total || 0).toFixed(2) %>
                 </td>
 
+                <!-- PAYMENT METHOD -->
                 <td>
+
                   <span class="badge bg-secondary">
                     <%= order.paymentMethod || "N/A" %>
                   </span>
+
                 </td>
 
+                <!-- PAYMENT STATUS -->
                 <td>
 
-                  <form action="/admin/orders/<%= order._id %>/status"
+                  <% if (order.paymentStatus === "Paid") { %>
+
+                  <span class="badge bg-success">
+                    <i class="fa-solid fa-circle-check me-1"></i>
+                    PAID
+                  </span>
+
+                  <% } else if (order.paymentStatus === "Failed") { %>
+
+                  <span class="badge bg-danger">
+                    <i class="fa-solid fa-circle-xmark me-1"></i>
+                    FAILED
+                  </span>
+
+                  <% } else { %>
+
+                  <span class="badge bg-warning text-dark">
+                    <i class="fa-solid fa-clock me-1"></i>
+                    PENDING
+                  </span>
+
+                  <% } %>
+
+                </td>
+
+                <!-- ORDER STATUS -->
+                <td>
+
+                  <form
+                    action="/admin/orders/<%= order._id %>/status"
                     method="POST"
                     class="d-flex gap-2">
 
-                    <select name="status"
+                    <select
+                      name="status"
                       class="form-select form-select-sm">
 
-                      <option value="Pending"
+                      <option
+                        value="Pending"
                         <%=order.status === "Pending" ? "selected" : "" %>>
                         Pending
                       </option>
 
-                      <option value="Processing"
+                      <option
+                        value="Processing"
                         <%=order.status === "Processing" ? "selected" : "" %>>
                         Processing
                       </option>
 
-                      <option value="Shipped"
+                      <option
+                        value="Shipped"
                         <%=order.status === "Shipped" ? "selected" : "" %>>
                         Shipped
                       </option>
 
-                      <option value="Delivered"
+                      <option
+                        value="Delivered"
                         <%=order.status === "Delivered" ? "selected" : "" %>>
                         Delivered
                       </option>
 
                     </select>
 
-                    <button type="submit"
+                    <button
+                      type="submit"
                       class="btn btn-warning btn-sm">
                       Update
                     </button>
@@ -397,8 +456,11 @@
 
                 </td>
 
+                <!-- DATE -->
                 <td>
+
                   <%= new Date(order.createdAt).toLocaleDateString() %>
+
                 </td>
 
               </tr>
@@ -411,7 +473,7 @@
 
         </div>
 
-        <% } else { %>
+        <% } else {%>
 
         <div class="alert alert-secondary mb-0">
           No orders have been placed yet.
@@ -420,9 +482,13 @@
         <% } %>
 
       </div>
+
     </div>
 
-    <!-- Products Management -->
+    <!-- ========================================= -->
+    <!-- PRODUCTS MANAGEMENT -->
+    <!-- ========================================= -->
+
     <div class="card shadow-sm border-0 mt-5">
 
       <div class="card-body p-4">
@@ -444,12 +510,18 @@
 
               <div class="card-body d-flex flex-column">
 
+                <!-- PRODUCT INFO -->
                 <div class="d-flex align-items-center mb-3">
 
-                  <img src="<%= product.image %>"
+                  <img
+                    src="<%= product.image %>"
                     alt="<%= product.name %>"
                     class="rounded me-3"
-                    style="width: 70px; height: 70px; object-fit: cover;">
+                    style="
+                      width: 70px;
+                      height: 70px;
+                      object-fit: cover;
+                    ">
 
                   <div>
 
@@ -465,23 +537,29 @@
 
                 </div>
 
+                <!-- PRICE -->
                 <p class="fw-bold text-warning fs-5 mb-3">
                   R<%= product.price %>.00
                 </p>
 
+                <!-- ACTIONS -->
                 <div class="mt-auto d-grid gap-2">
 
-                  <a href="/product/<%= product._id %>"
+                  <a
+                    href="/product/<%= product._id %>"
                     class="btn btn-outline-dark btn-sm">
+
                     View Product
+
                   </a>
 
-                  <!-- 🔥 DELETE BUTTON -->
-                  <form action="/admin/delete-product/<%= product._id %>"
+                  <form
+                    action="/admin/delete-product/<%= product._id %>"
                     method="POST"
                     onsubmit="return confirm('Delete this product?')">
 
-                    <button type="submit"
+                    <button
+                      type="submit"
                       class="btn btn-danger btn-sm w-100">
 
                       <i class="fa-solid fa-trash me-2"></i>
@@ -503,7 +581,7 @@
 
         </div>
 
-        <% } else { %>
+        <% } else {%>
 
         <div class="alert alert-secondary mb-0">
           No products available yet.

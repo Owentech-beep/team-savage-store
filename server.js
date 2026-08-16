@@ -5,6 +5,9 @@ import Product from "./models/Product.js";
 import Order from "./models/Order.js";
 import { sendEmail } from "./utils/mailer.js";
 import multer from "multer";
+import { generatePayfastSignature } from "./utils/payfast.js";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import path from "path";
 import { sendOrderConfirmation } from "./utils/mailer.js";
 import session from "express-session";
@@ -20,44 +23,57 @@ try {
   await mongoose.connect(process.env.MONGODB_URI);
 
   console.log("🔥 MongoDB connected successfully");
-
 } catch (error) {
   console.error("❌ MongoDB connection error:", error);
 
   process.exit(1);
 }
 
-app.use(express.urlencoded({ extended: true }));
+// ===============================
+// CLOUDINARY CONFIG
+// ===============================
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // ===============================
-// MULTER CONFIG
+// CLOUDINARY MULTER STORAGE
 // ===============================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/uploads");
-  },
 
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+const storage = new CloudinaryStorage({
+  cloudinary,
+
+  params: {
+    folder: "team-savage-products",
+    resource_type: "image",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
   },
 });
 
-const upload = multer({ storage });
-
-app.use(session({
-  secret: "team-savage-secret-key",
-  resave: false,
-  saveUninitialized: false,
-}));
+const upload = multer({
+  storage,
+});
 
 // Static files
 app.use(express.static("public"));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "team-savage-secret-key",
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
 // EJS
 app.set("view engine", "ejs");
 
 function isAdmin(req, res, next) {
-  if (req.session.isAdmin) {
+  if (req.session && req.session.isAdmin) {
     return next();
   }
 
@@ -89,7 +105,7 @@ app.get("/shop", async (req, res) => {
 
 app.get("/clothing", async (req, res) => {
   const products = await Product.find({
-    category: { $regex: /^clothing$/i }
+    category: { $regex: /^clothing$/i },
   });
 
   res.render("clothing", { products });
@@ -97,17 +113,14 @@ app.get("/clothing", async (req, res) => {
 
 app.get("/accessories", async (req, res) => {
   const products = await Product.find({
-    category: { $regex: /^accessories$/i }
+    category: { $regex: /^accessories$/i },
   });
 
   res.render("accessories", { products });
 });
 
-
-
 app.get("/product/:id", async (req, res) => {
   try {
-
     // 🔥 Check if ID is valid
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(404).send("Invalid product ID");
@@ -120,7 +133,6 @@ app.get("/product/:id", async (req, res) => {
     }
 
     res.render("product-details", { product });
-
   } catch (error) {
     console.error(error);
 
@@ -132,11 +144,10 @@ app.get("/cart", (req, res) => {
   res.render("cart");
 });
 
-
 // ===============================
 // ADMIN DASHBOARD
 // ===============================
-app.get("/admin", isAdmin , async(req, res) => {
+app.get("/admin", isAdmin, async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
     const orders = await Order.find().sort({ createdAt: -1 });
@@ -147,14 +158,11 @@ app.get("/admin", isAdmin , async(req, res) => {
 
     // Count orders placed today
     const ordersToday = orders.filter(
-      order => new Date(order.createdAt) >= today
+      (order) => new Date(order.createdAt) >= today,
     ).length;
 
     // Calculate total revenue
-    const revenue = orders.reduce(
-      (sum, order) => sum + order.total,
-      0
-    );
+    const revenue = orders.reduce((sum, order) => sum + order.total, 0);
 
     res.render("admin", {
       products,
@@ -162,7 +170,6 @@ app.get("/admin", isAdmin , async(req, res) => {
       ordersToday,
       revenue,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).send("Error loading admin dashboard");
@@ -171,9 +178,8 @@ app.get("/admin", isAdmin , async(req, res) => {
 // ===============================
 // UPDATE ORDER STATUS
 // ===============================
-app.post("/admin/orders/:id/status", isAdmin , async(req, res) => {
+app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
   try {
-
     await Order.findByIdAndUpdate(req.params.id, {
       status: req.body.status,
     });
@@ -181,7 +187,6 @@ app.post("/admin/orders/:id/status", isAdmin , async(req, res) => {
     console.log(`🔥 Order updated to ${req.body.status}`);
 
     res.redirect("/admin");
-
   } catch (error) {
     console.error(error);
 
@@ -198,7 +203,6 @@ app.get("/admin", isAdmin, async (req, res) => {
       products,
       orders,
     });
-
   } catch (error) {
     console.error(error);
 
@@ -215,7 +219,6 @@ app.get("/order-success/:id", async (req, res) => {
     }
 
     res.render("order-success", { order });
-
   } catch (error) {
     console.error(error);
     res.status(500).send("Error loading confirmation page");
@@ -225,7 +228,6 @@ app.get("/order-success/:id", async (req, res) => {
 app.get("/checkout", (req, res) => {
   res.render("checkout");
 });
-
 
 app.get("/about", (req, res) => {
   res.render("about");
@@ -237,14 +239,13 @@ app.get("/category/:name", async (req, res) => {
     const categoryName = req.params.name;
 
     const filteredProducts = await Product.find({
-      category: { $regex: new RegExp(`^${categoryName}$`, "i") }
+      category: { $regex: new RegExp(`^${categoryName}$`, "i") },
     });
 
     res.render("category", {
       category: categoryName,
       products: filteredProducts,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).send("Error loading category");
@@ -256,13 +257,7 @@ app.get("/contact", (req, res) => {
 });
 
 app.post("/contact", async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    email,
-    subject,
-    message
-  } = req.body;
+  const { firstName, lastName, email, subject, message } = req.body;
 
   console.log({
     firstName,
@@ -273,9 +268,7 @@ app.post("/contact", async (req, res) => {
   });
 
   try {
-
     await sendEmail({
-
       // Your TEAM SAVAGE email
       to: process.env.EMAIL_USER,
 
@@ -343,17 +336,10 @@ app.post("/contact", async (req, res) => {
     console.log("📧 Customer enquiry email sent!");
 
     res.redirect("/contact");
-
   } catch (error) {
+    console.error("❌ Failed to send enquiry email:", error);
 
-    console.error(
-      "❌ Failed to send enquiry email:",
-      error
-    );
-
-    res.status(500).send(
-      "Failed to send enquiry email."
-    );
+    res.status(500).send("Failed to send enquiry email.");
   }
 });
 
@@ -361,78 +347,298 @@ app.post(
   "/admin/add-product",
   isAdmin,
   upload.fields([
-  { name: "image", maxCount: 1 },
-  { name: "gallery", maxCount: 3 },
-]),
+    { name: "image", maxCount: 1 },
+    { name: "gallery", maxCount: 3 },
+  ]),
   async (req, res) => {
+
     try {
-            await Product.create({
+
+      const mainImage = req.files?.image?.[0];
+
+      if (!mainImage) {
+        return res.status(400).send("Main product image is required.");
+      }
+
+      const galleryImages = req.files?.gallery || [];
+
+      await Product.create({
+
         name: req.body.name,
+
         price: Number(req.body.price),
+
         category: req.body.category,
 
-        image: `/uploads/${req.files.image[0].filename}`,
+        // Cloudinary URL
+        image: mainImage.path,
 
-        gallery: req.files.gallery
-          ? req.files.gallery.map(
-              file => `/uploads/${file.filename}`
-            )
-          : [],
+        // Cloudinary gallery URLs
+        gallery: galleryImages.map(file => file.path),
 
         description: req.body.description,
 
         colors: req.body.colors
-          ? req.body.colors.split(",").map(c => c.trim())
+          ? req.body.colors
+              .split(",")
+              .map(c => c.trim())
+              .filter(Boolean)
           : [],
 
         sizes: req.body.sizes
-          ? req.body.sizes.split(",").map(s => s.trim())
+          ? req.body.sizes
+              .split(",")
+              .map(s => s.trim())
+              .filter(Boolean)
           : [],
 
         featured: req.body.featured === "true",
+
       });
 
-      console.log("🔥 Product saved with image upload");
+      console.log("🔥 Product saved with Cloudinary images");
 
       res.redirect("/admin");
 
     } catch (error) {
-      console.error(error);
+
+      console.error("❌ Error saving product:", error);
 
       res.status(500).send("Error saving product");
+
     }
   }
 );
 
 app.post("/api/orders", express.json(), async (req, res) => {
+
   try {
-    const order = await Order.create(req.body);
 
-    console.log("🔥 Order saved:", order._id);
+    const order = await Order.create({
 
-    res.status(201).json({
-      success: true,
-      orderId: order._id,
+      customerName: req.body.customerName,
+
+      customerEmail: req.body.customerEmail,
+
+      customerPhone: req.body.customerPhone,
+
+      address: req.body.address,
+
+      city: req.body.city,
+
+      province: req.body.province,
+
+      postalCode: req.body.postalCode,
+
+      items: req.body.items,
+
+      subtotal: req.body.subtotal,
+
+      deliveryFee: req.body.deliveryFee,
+
+      total: req.body.total,
+
+      paymentMethod: req.body.paymentMethod,
+
+      paymentStatus: "Pending",
+
+      status: "Pending",
+
     });
+
+
+    console.log(
+      "🔥 Order saved:",
+      order._id
+    );
+
+    app.post("/api/payfast/create", async (req, res) => {
+
+  try {
+
+    const {
+      orderId
+    } = req.body;
+
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    const paymentData = {
+
+      merchant_id: process.env.PAYFAST_MERCHANT_ID,
+
+      merchant_key: process.env.PAYFAST_MERCHANT_KEY,
+
+      return_url:
+        `${process.env.BASE_URL}/order-success/${order._id}`,
+
+      cancel_url:
+        `${process.env.BASE_URL}/checkout`,
+
+      notify_url:
+        `${process.env.BASE_URL}/api/payfast/notify`,
+
+      name_first:
+        order.customerName?.split(" ")[0] || "Customer",
+
+      name_last:
+        order.customerName?.split(" ").slice(1).join(" ") || "",
+
+      email_address:
+        order.customerEmail,
+
+      m_payment_id:
+        order._id.toString(),
+
+      amount:
+        Number(order.total).toFixed(2),
+
+      item_name:
+        `TEAM SAVAGE Order ${order._id.toString().slice(-6)}`,
+
+    };
+
+    paymentData.signature =
+      generatePayfastSignature(paymentData);
+
+    res.json({
+      success: true,
+      paymentData,
+      payfastUrl: process.env.PAYFAST_URL,
+    });
+
   } catch (error) {
-    console.error(error);
+
+    console.error("❌ PayFast creation error:", error);
 
     res.status(500).json({
       success: false,
-      message: "Error saving order",
+      message: "Unable to create PayFast payment",
     });
+
   }
+
 });
+
+
+    res.status(201).json({
+
+      success: true,
+
+      orderId: order._id,
+
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      "❌ Error saving order:",
+      error
+    );
+
+
+    res.status(500).json({
+
+      success: false,
+
+      message: "Error saving order",
+
+    });
+
+  }
+
+});
+
+// =====================================
+// PAYFAST ITN / PAYMENT NOTIFICATION
+// =====================================
+
+app.post(
+  "/api/payfast/notify",
+  express.urlencoded({ extended: false }),
+  async (req, res) => {
+
+    try {
+
+      console.log("🔥 PayFast ITN received");
+
+      const data = req.body;
+
+      console.log("PayFast data:", data);
+
+      // ---------------------------------
+      // Find the order
+      // ---------------------------------
+
+      const orderId = data.m_payment_id;
+
+      if (!orderId) {
+        console.error("❌ No payment ID received from PayFast");
+        return res.status(400).send("Missing payment ID");
+      }
+
+      const order = await Order.findById(orderId);
+
+      if (!order) {
+        console.error("❌ Order not found:", orderId);
+        return res.status(404).send("Order not found");
+      }
+
+      // ---------------------------------
+      // Check PayFast payment status
+      // ---------------------------------
+
+      if (data.payment_status === "COMPLETE") {
+
+        order.paymentStatus = "Paid";
+
+        order.paymentMethod = "PayFast";
+
+        await order.save();
+
+        console.log(
+          `💰 PAYMENT PAID — Order ${order._id}`
+        );
+
+      } else {
+
+        console.log(
+          `⚠️ PayFast payment status: ${data.payment_status}`
+        );
+
+      }
+
+      // PayFast expects a successful response
+      res.status(200).send("OK");
+
+    } catch (error) {
+
+      console.error(
+        "❌ PayFast ITN error:",
+        error
+      );
+
+      res.status(500).send("ITN processing failed");
+
+    }
+
+  }
+);
 
 app.post("/admin/delete-product/:id", isAdmin, async (req, res) => {
   try {
-
     await Product.findByIdAndDelete(req.params.id);
 
     console.log("🗑️ Product deleted");
 
     res.redirect("/admin");
-
   } catch (error) {
     console.error(error);
 
@@ -446,7 +652,6 @@ app.post("/admin/delete-product/:id", isAdmin, async (req, res) => {
 
 app.post("/admin/reset-store", isAdmin, async (req, res) => {
   try {
-
     // Delete all products
     await Product.deleteMany({});
 
@@ -456,13 +661,10 @@ app.post("/admin/reset-store", isAdmin, async (req, res) => {
     console.log("🔥 TEAM SAVAGE store has been completely reset");
 
     res.redirect("/admin");
-
   } catch (error) {
-
     console.error("❌ Error resetting store:", error);
 
     res.status(500).send("Error resetting store");
-
   }
 });
 
@@ -476,7 +678,6 @@ app.post("/api/orders", express.json(), async (req, res) => {
       success: true,
       orderId: order._id,
     });
-
   } catch (error) {
     console.error(error);
 
@@ -505,13 +706,9 @@ const adminPasswordHash = await bcrypt.hash("Meathotmail789", 10);
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  const validPassword = await bcrypt.compare(
-    password,
-    adminPasswordHash
-  );
+  const validPassword = await bcrypt.compare(password, adminPasswordHash);
 
   if (email === adminEmail && validPassword) {
-
     req.session.isAdmin = true;
 
     return res.redirect("/admin");
