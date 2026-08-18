@@ -3,21 +3,20 @@ import { products } from "./data/products.js";
 import mongoose from "mongoose";
 import Product from "./models/Product.js";
 import Order from "./models/Order.js";
-import { sendEmail } from "./utils/mailer.js";
 import multer from "multer";
 import {
   generatePayfastSignature,
-  generatePayfastITNSignature
+  generatePayfastITNSignature,
 } from "./utils/payfast.js";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import path from "path";
-import { sendOrderConfirmation } from "./utils/mailer.js";
+import {
+  sendOrderConfirmation,
+  sendEmail
+} from "./utils/mailer.js";
 import session from "express-session";
 import bcrypt from "bcrypt";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -228,6 +227,24 @@ app.get("/order-success/:id", async (req, res) => {
   }
 });
 
+app.get("/eft-payment/:id", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).send("Order not found");
+    }
+
+    res.render("eft-payment", {
+      order,
+    });
+  } catch (error) {
+    console.error("❌ Error loading EFT payment page:", error);
+
+    res.status(500).send("Error loading EFT payment page");
+  }
+});
+
 app.get("/checkout", (req, res) => {
   res.render("checkout");
 });
@@ -354,9 +371,7 @@ app.post(
     { name: "gallery", maxCount: 3 },
   ]),
   async (req, res) => {
-
     try {
-
       const mainImage = req.files?.image?.[0];
 
       if (!mainImage) {
@@ -366,7 +381,6 @@ app.post(
       const galleryImages = req.files?.gallery || [];
 
       await Product.create({
-
         name: req.body.name,
 
         price: Number(req.body.price),
@@ -377,48 +391,41 @@ app.post(
         image: mainImage.path,
 
         // Cloudinary gallery URLs
-        gallery: galleryImages.map(file => file.path),
+        gallery: galleryImages.map((file) => file.path),
 
         description: req.body.description,
 
         colors: req.body.colors
           ? req.body.colors
               .split(",")
-              .map(c => c.trim())
+              .map((c) => c.trim())
               .filter(Boolean)
           : [],
 
         sizes: req.body.sizes
           ? req.body.sizes
               .split(",")
-              .map(s => s.trim())
+              .map((s) => s.trim())
               .filter(Boolean)
           : [],
 
         featured: req.body.featured === "true",
-
       });
 
       console.log("🔥 Product saved with Cloudinary images");
 
       res.redirect("/admin");
-
     } catch (error) {
-
       console.error("❌ Error saving product:", error);
 
       res.status(500).send("Error saving product");
-
     }
-  }
+  },
 );
 
 app.post("/api/orders", express.json(), async (req, res) => {
-
   try {
-
     const order = await Order.create({
-
       customerName: req.body.customerName,
 
       customerEmail: req.body.customerEmail,
@@ -446,117 +453,78 @@ app.post("/api/orders", express.json(), async (req, res) => {
       paymentStatus: "Pending",
 
       status: "Pending",
-
     });
 
-
-    console.log(
-      "🔥 Order saved:",
-      order._id
-    );
+    console.log("🔥 Order saved:", order._id);
 
     app.post("/api/payfast/create", async (req, res) => {
+      try {
+        const { orderId } = req.body;
 
-  try {
+        const order = await Order.findById(orderId);
 
-    const {
-      orderId
-    } = req.body;
+        if (!order) {
+          return res.status(404).json({
+            success: false,
+            message: "Order not found",
+          });
+        }
 
-    const order = await Order.findById(orderId);
+        const paymentData = {
+          merchant_id: process.env.PAYFAST_MERCHANT_ID,
 
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
-    }
+          merchant_key: process.env.PAYFAST_MERCHANT_KEY,
 
-    const paymentData = {
+          return_url: `${process.env.BASE_URL}/order-success/${order._id}`,
 
-      merchant_id: process.env.PAYFAST_MERCHANT_ID,
+          cancel_url: `${process.env.BASE_URL}/checkout`,
 
-      merchant_key: process.env.PAYFAST_MERCHANT_KEY,
+          notify_url: `${process.env.BASE_URL}/api/payfast/notify`,
 
-      return_url:
-        `${process.env.BASE_URL}/order-success/${order._id}`,
+          name_first: order.customerName?.split(" ")[0] || "Customer",
 
-      cancel_url:
-        `${process.env.BASE_URL}/checkout`,
+          name_last: order.customerName?.split(" ").slice(1).join(" ") || "",
 
-      notify_url:
-        `${process.env.BASE_URL}/api/payfast/notify`,
+          email_address: order.customerEmail,
 
-      name_first:
-        order.customerName?.split(" ")[0] || "Customer",
+          m_payment_id: order._id.toString(),
 
-      name_last:
-        order.customerName?.split(" ").slice(1).join(" ") || "",
+          amount: Number(order.total).toFixed(2),
 
-      email_address:
-        order.customerEmail,
+          item_name: `TEAM SAVAGE Order ${order._id.toString().slice(-6)}`,
+        };
 
-      m_payment_id:
-        order._id.toString(),
+        paymentData.signature = generatePayfastSignature(paymentData);
 
-      amount:
-        Number(order.total).toFixed(2),
+        res.json({
+          success: true,
+          paymentData,
+          payfastUrl: process.env.PAYFAST_URL,
+        });
+      } catch (error) {
+        console.error("❌ PayFast creation error:", error);
 
-      item_name:
-        `TEAM SAVAGE Order ${order._id.toString().slice(-6)}`,
-
-    };
-
-    paymentData.signature =
-      generatePayfastSignature(paymentData);
-
-    res.json({
-      success: true,
-      paymentData,
-      payfastUrl: process.env.PAYFAST_URL,
+        res.status(500).json({
+          success: false,
+          message: "Unable to create PayFast payment",
+        });
+      }
     });
-
-  } catch (error) {
-
-    console.error("❌ PayFast creation error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Unable to create PayFast payment",
-    });
-
-  }
-
-});
-
 
     res.status(201).json({
-
       success: true,
 
       orderId: order._id,
-
     });
-
-
   } catch (error) {
-
-    console.error(
-      "❌ Error saving order:",
-      error
-    );
-
+    console.error("❌ Error saving order:", error);
 
     res.status(500).json({
-
       success: false,
 
       message: "Error saving order",
-
     });
-
   }
-
 });
 
 // =====================================
@@ -587,35 +555,30 @@ app.post(
       }
 
       // ---------------------------------
-// 2. Verify PayFast signature
-// ---------------------------------
+      // 2. Verify PayFast signature
+      // ---------------------------------
 
-const receivedSignature = data.signature;
+      const receivedSignature = data.signature;
 
-const expectedSignature =
-  generatePayfastITNSignature(data);
+      const expectedSignature = generatePayfastITNSignature(data);
 
-if (
-  receivedSignature.toLowerCase() !==
-  expectedSignature.toLowerCase()
-) {
-  console.error("❌ Invalid PayFast signature");
+      if (receivedSignature.toLowerCase() !== expectedSignature.toLowerCase()) {
+        console.error("❌ Invalid PayFast signature");
 
-  console.error("Received:", receivedSignature);
-  console.error("Expected:", expectedSignature);
+        console.error("Received:", receivedSignature);
+        console.error("Expected:", expectedSignature);
 
-  return res.status(400).send("Invalid signature");
-}
+        return res.status(400).send("Invalid signature");
+      }
 
-console.log("✅ PayFast signature verified");
+      console.log("✅ PayFast signature verified");
 
       // ---------------------------------
       // 3. Verify merchant ID
       // ---------------------------------
 
       if (
-        String(data.merchant_id) !==
-        String(process.env.PAYFAST_MERCHANT_ID)
+        String(data.merchant_id) !== String(process.env.PAYFAST_MERCHANT_ID)
       ) {
         console.error("❌ Invalid merchant ID");
 
@@ -628,15 +591,10 @@ console.log("✅ PayFast signature verified");
       // 4. Find the order
       // ---------------------------------
 
-      const order = await Order.findById(
-        data.m_payment_id
-      );
+      const order = await Order.findById(data.m_payment_id);
 
       if (!order) {
-        console.error(
-          "❌ Order not found:",
-          data.m_payment_id
-        );
+        console.error("❌ Order not found:", data.m_payment_id);
 
         return res.status(404).send("Order not found");
       }
@@ -645,35 +603,23 @@ console.log("✅ PayFast signature verified");
       // 5. Verify payment amount
       // ---------------------------------
 
-      const payfastAmount =
-        Number(data.amount_gross);
+      const payfastAmount = Number(data.amount_gross);
 
-      const orderAmount =
-        Number(order.total);
+      const orderAmount = Number(order.total);
 
-      if (
-        !Number.isFinite(payfastAmount) ||
-        !Number.isFinite(orderAmount)
-      ) {
+      if (!Number.isFinite(payfastAmount) || !Number.isFinite(orderAmount)) {
         console.error("❌ Invalid payment amount");
 
         return res.status(400).send("Invalid amount");
       }
 
-      if (
-        Math.abs(payfastAmount - orderAmount) > 0.01
-      ) {
-        console.error(
-          "❌ Payment amount mismatch",
-          {
-            payfastAmount,
-            orderAmount,
-          }
-        );
+      if (Math.abs(payfastAmount - orderAmount) > 0.01) {
+        console.error("❌ Payment amount mismatch", {
+          payfastAmount,
+          orderAmount,
+        });
 
-        return res.status(400).send(
-          "Payment amount mismatch"
-        );
+        return res.status(400).send("Payment amount mismatch");
       }
 
       console.log("✅ Payment amount verified");
@@ -683,9 +629,7 @@ console.log("✅ PayFast signature verified");
       // ---------------------------------
 
       if (data.payment_status !== "COMPLETE") {
-        console.log(
-          `⚠️ PayFast payment status: ${data.payment_status}`
-        );
+        console.log(`⚠️ PayFast payment status: ${data.payment_status}`);
 
         return res.status(200).send("OK");
       }
@@ -695,9 +639,7 @@ console.log("✅ PayFast signature verified");
       // ---------------------------------
 
       if (order.paymentStatus === "Paid") {
-        console.log(
-          `ℹ️ Order ${order._id} is already paid`
-        );
+        console.log(`ℹ️ Order ${order._id} is already paid`);
 
         return res.status(200).send("OK");
       }
@@ -711,25 +653,55 @@ console.log("✅ PayFast signature verified");
 
       await order.save();
 
-      console.log(
-        `💰 PAYMENT PAID — Order ${order._id}`
-      );
+      console.log(`💰 PAYMENT PAID — Order ${order._id}`);
+
+      await sendOrderConfirmation(order);
 
       res.status(200).send("OK");
-
     } catch (error) {
+      console.error("❌ PayFast ITN error:", error);
 
-      console.error(
-        "❌ PayFast ITN error:",
-        error
-      );
-
-      res.status(500).send(
-        "ITN processing failed"
-      );
+      res.status(500).send("ITN processing failed");
     }
-  }
+  },
 );
+
+app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).send("Order not found");
+    }
+
+    // Only allow manual payment confirmation for EFT
+    if (order.paymentMethod !== "EFT") {
+      return res
+        .status(400)
+        .send("Only EFT payments can be manually confirmed.");
+    }
+
+    order.paymentStatus = "Paid";
+
+    await order.save();
+
+    console.log(`💰 EFT PAYMENT CONFIRMED — Order ${order._id}`);
+
+    // 📧 TEMPORARY EMAIL DEBUGGING
+    console.log("📧 About to send EFT confirmation email...");
+
+    await sendOrderConfirmation(order);
+
+    console.log("📧 EFT confirmation function finished.");
+
+    // Redirect back to admin
+    res.redirect("/admin");
+  } catch (error) {
+    console.error("❌ Error confirming EFT payment:", error);
+
+    res.status(500).send("Unable to confirm payment");
+  }
+});
 
 app.post("/admin/delete-product/:id", isAdmin, async (req, res) => {
   try {

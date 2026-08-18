@@ -1,0 +1,153 @@
+<%- include("partials/header") %>
+<%- include("partials/navbar") %>
+
+<section class="py-5 mt-5 bg-white text-dark">
+
+  <div class="container">
+
+    <div class="row justify-content-center">
+
+      <div class="col-lg-7">
+
+        <div class="card shadow-sm border-0">
+
+          <div class="card-body p-5">
+
+            <div class="text-center mb-4">
+
+              <i
+                class="fa-solid fa-building-columns text-warning"
+                style="font-size: 3rem;">
+              </i>
+
+              <h1 class="fw-bold mt-3">
+                EFT Payment
+              </h1>
+
+              <p class="text-muted">
+                Your order has been received.
+              </p>
+
+            </div>
+
+
+            <div class="alert alert-warning">
+
+              <strong>
+                Payment Status: PENDING
+              </strong>
+
+              <br>
+
+              Your order will be processed once
+              payment has been confirmed.
+
+            </div>
+
+
+            <h5 class="fw-bold mb-3">
+              Order Details
+            </h5>
+
+            <div class="d-flex justify-content-between mb-2">
+
+              <span>
+                Order Number
+              </span>
+
+              <strong>
+                #<%= order._id.toString().slice(-6).toUpperCase() %>
+              </strong>
+
+            </div>
+
+
+            <div class="d-flex justify-content-between mb-4">
+
+              <span>
+                Amount
+              </span>
+
+              <strong class="text-warning">
+                R<%= Number(order.total).toFixed(2) %>
+              </strong>
+
+            </div>
+
+
+            <hr>
+
+
+            <h5 class="fw-bold mb-3">
+              Bank Details
+            </h5>
+
+            <div class="bg-light rounded p-4">
+
+              <p class="mb-2">
+                <strong>Bank:</strong>
+                [BANK NAME]
+              </p>
+
+              <p class="mb-2">
+                <strong>Account Name:</strong>
+                TEAM SAVAGE
+              </p>
+
+              <p class="mb-2">
+                <strong>Account Number:</strong>
+                [ACCOUNT NUMBER]
+              </p>
+
+              <p class="mb-2">
+                <strong>Branch Code:</strong>
+                [BRANCH CODE]
+              </p>
+
+              <p class="mb-0">
+                <strong>Reference:</strong>
+
+                <span class="fw-bold text-danger">
+                  <%= order._id.toString().slice(-6).toUpperCase() %>
+                </span>
+              </p>
+
+            </div>
+
+
+            <div class="alert alert-info mt-4">
+
+              <i class="fa-solid fa-circle-info me-2"></i>
+
+              Please use your
+              <strong>order number</strong>
+              as your EFT payment reference.
+
+            </div>
+
+
+            <div class="text-center mt-4">
+
+              <a
+                href="/"
+                class="btn btn-dark btn-lg">
+
+                Continue Shopping
+
+              </a>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+<%- include("partials/footer") %>

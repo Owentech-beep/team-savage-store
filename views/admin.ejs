@@ -404,6 +404,27 @@
                     PENDING
                   </span>
 
+                  <% if (order.paymentMethod === "EFT") { %>
+
+                  <form
+                    action="/admin/orders/<%= order._id %>/payment"
+                    method="POST"
+                    class="mt-2">
+
+                    <button
+                      type="submit"
+                      class="btn btn-success btn-sm w-100"
+                      onclick="return confirm('Confirm that this EFT payment has been received?')">
+
+                      <i class="fa-solid fa-circle-check me-1"></i>
+                      Mark Paid
+
+                    </button>
+
+                  </form>
+
+                  <% } %>
+
                   <% } %>
 
                 </td>
@@ -449,7 +470,9 @@
                     <button
                       type="submit"
                       class="btn btn-warning btn-sm">
+
                       Update
+
                     </button>
 
                   </form>
@@ -473,7 +496,7 @@
 
         </div>
 
-        <% } else {%>
+        <% } else { %>
 
         <div class="alert alert-secondary mb-0">
           No orders have been placed yet.
@@ -581,7 +604,7 @@
 
         </div>
 
-        <% } else {%>
+        <% } else { %>
 
         <div class="alert alert-secondary mb-0">
           No products available yet.

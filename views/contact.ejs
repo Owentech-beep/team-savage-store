@@ -38,7 +38,7 @@
 
             <div>
               <h6 class="fw-bold mb-1">Email</h6>
-              <p class="mb-0 text-muted">support@teamsavage.co.za</p>
+              <p class="mb-0 text-muted">teamsavage.online@gmail.com</p>
             </div>
 
           </div>
@@ -86,98 +86,121 @@
 
       </div>
 
-      <!-- Contact Form -->
-      <div class="col-lg-7">
+     <!-- Contact Form -->
+<div class="col-lg-7">
 
-        <div class="card shadow-sm border-0">
+  <div class="card shadow-sm border-0">
 
-          <div class="card-body p-4 p-lg-5">
+    <div class="card-body p-4 p-lg-5">
 
-            <h3 class="fw-bold mb-4">Send Us a Message</h3>
+      <h3 class="fw-bold mb-4">
+        Send Us a Message
+      </h3>
 
-            <form action="https://formsubmit.co/teamsavage.online@gmail.com"
-              method="POST">
+      <form
+        action="/contact"
+        method="POST">
 
-              <!-- FormSubmit Settings -->
-              <input type="hidden"
-                name="_subject"
-                value="🔥 TEAM SAVAGE Customer Enquiry">
+        <div class="row g-3">
 
-              <input type="hidden"
-                name="_captcha"
-                value="false">
+          <div class="col-md-6">
 
-              <input type="hidden"
-                name="_template"
-                value="table">
+            <label class="form-label">
+              First Name
+            </label>
 
-              <input type="hidden"
-                name="_next"
-                value="http://localhost:3000/contact">
+            <input
+              type="text"
+              name="firstName"
+              class="form-control"
+              required>
 
-              <div class="row g-3">
+          </div>
 
-                <div class="col-md-6">
-                  <label class="form-label">First Name</label>
 
-                  <input type="text"
-                    name="firstName"
-                    class="form-control"
-                    required>
-                </div>
+          <div class="col-md-6">
 
-                <div class="col-md-6">
-                  <label class="form-label">Last Name</label>
+            <label class="form-label">
+              Last Name
+            </label>
 
-                  <input type="text"
-                    name="lastName"
-                    class="form-control"
-                    required>
-                </div>
+            <input
+              type="text"
+              name="lastName"
+              class="form-control"
+              required>
 
-                <div class="col-12">
-                  <label class="form-label">Email Address</label>
+          </div>
 
-                  <input type="email"
-                    name="email"
-                    class="form-control"
-                    required>
-                </div>
 
-                <div class="col-12">
-                  <label class="form-label">Subject</label>
+          <div class="col-12">
 
-                  <input type="text"
-                    name="subject"
-                    class="form-control"
-                    required>
-                </div>
+            <label class="form-label">
+              Email Address
+            </label>
 
-                <div class="col-12">
-                  <label class="form-label">Message</label>
+            <input
+              type="email"
+              name="email"
+              class="form-control"
+              required>
 
-                  <textarea name="message"
-                    rows="6"
-                    class="form-control"
-                    required></textarea>
-                </div>
+          </div>
 
-                <div class="col-12">
 
-                  <button type="submit"
-                    class="btn btn-warning btn-lg w-100">
+          <div class="col-12">
 
-                    <i class="fa-solid fa-paper-plane me-2"></i>
+            <label class="form-label">
+              Subject
+            </label>
 
-                    Send Message
+            <input
+              type="text"
+              name="subject"
+              class="form-control"
+              required>
 
-                  </button>
+          </div>
 
-                </div>
 
-              </div>
+          <div class="col-12">
 
-            </form>
+            <label class="form-label">
+              Message
+            </label>
+
+            <textarea
+              name="message"
+              rows="6"
+              class="form-control"
+              required></textarea>
+
+          </div>
+
+
+          <div class="col-12">
+
+            <button
+              type="submit"
+              class="btn btn-warning btn-lg w-100">
+
+              <i class="fa-solid fa-paper-plane me-2"></i>
+
+              Send Message
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+</div>
 
           </div>
 
