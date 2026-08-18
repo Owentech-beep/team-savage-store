@@ -58,26 +58,13 @@ export function generatePayfastITNSignature(data) {
   const passphrase =
     process.env.PAYFAST_PASSPHRASE || "";
 
-  const signatureData = { ...data };
+  const parameterString = Object.entries(data)
+    .filter(([key]) => key !== "signature")
+    .map(([key, value]) => {
 
-  // VERY IMPORTANT:
-  // PayFast's received signature must NOT
-  // be included in the string we hash.
-  delete signatureData.signature;
-
-  const parameterString = Object.keys(signatureData)
-    .filter(key =>
-      signatureData[key] !== undefined &&
-      signatureData[key] !== null &&
-      signatureData[key] !== ""
-    )
-    .map(key => {
-
-      const value =
-        String(signatureData[key]).trim();
-
-      return `${key}=${encodeURIComponent(value)
-        .replace(/%20/g, "+")}`;
+      return `${key}=${encodeURIComponent(
+        String(value).trim()
+      ).replace(/%20/g, "+")}`;
 
     })
     .join("&");
