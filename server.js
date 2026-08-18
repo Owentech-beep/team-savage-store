@@ -5,7 +5,10 @@ import Product from "./models/Product.js";
 import Order from "./models/Order.js";
 import { sendEmail } from "./utils/mailer.js";
 import multer from "multer";
-import { generatePayfastSignature } from "./utils/payfast.js";
+import {
+  generatePayfastSignature,
+  generatePayfastITNSignature
+} from "./utils/payfast.js";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import path from "path";
@@ -594,7 +597,7 @@ app.post(
       delete signatureData.signature;
 
       const expectedSignature =
-        generatePayfastSignature(signatureData);
+        generatePayfastSignature(data);
 
       if (receivedSignature !== expectedSignature) {
         console.error("❌ Invalid PayFast signature");
