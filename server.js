@@ -587,28 +587,27 @@ app.post(
       }
 
       // ---------------------------------
-      // 2. Verify PayFast signature
-      // ---------------------------------
+// 2. Verify PayFast signature
+// ---------------------------------
 
-      const receivedSignature = data.signature;
+const receivedSignature = data.signature;
 
-      // Make a copy without the received signature
-      const signatureData = { ...data };
-      delete signatureData.signature;
+const expectedSignature =
+  generatePayfastITNSignature(data);
 
-      const expectedSignature =
-        generatePayfastSignature(data);
+if (
+  receivedSignature.toLowerCase() !==
+  expectedSignature.toLowerCase()
+) {
+  console.error("❌ Invalid PayFast signature");
 
-      if (receivedSignature !== expectedSignature) {
-        console.error("❌ Invalid PayFast signature");
+  console.error("Received:", receivedSignature);
+  console.error("Expected:", expectedSignature);
 
-        console.error("Received:", receivedSignature);
-        console.error("Expected:", expectedSignature);
+  return res.status(400).send("Invalid signature");
+}
 
-        return res.status(400).send("Invalid signature");
-      }
-
-      console.log("✅ PayFast signature verified");
+console.log("✅ PayFast signature verified");
 
       // ---------------------------------
       // 3. Verify merchant ID

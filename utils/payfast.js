@@ -58,18 +58,26 @@ export function generatePayfastITNSignature(data) {
   const passphrase =
     process.env.PAYFAST_PASSPHRASE || "";
 
-  const parameterString = Object.entries(data)
-    .filter(([key, value]) =>
-      key !== "signature" &&
-      value !== undefined &&
-      value !== null &&
-      value !== ""
-    )
-    .map(([key, value]) => {
+  const signatureData = { ...data };
 
-      return `${key}=${encodeURIComponent(
-        String(value).trim()
-      ).replace(/%20/g, "+")}`;
+  // VERY IMPORTANT:
+  // PayFast's received signature must NOT
+  // be included in the string we hash.
+  delete signatureData.signature;
+
+  const parameterString = Object.keys(signatureData)
+    .filter(key =>
+      signatureData[key] !== undefined &&
+      signatureData[key] !== null &&
+      signatureData[key] !== ""
+    )
+    .map(key => {
+
+      const value =
+        String(signatureData[key]).trim();
+
+      return `${key}=${encodeURIComponent(value)
+        .replace(/%20/g, "+")}`;
 
     })
     .join("&");
@@ -80,10 +88,21 @@ export function generatePayfastITNSignature(data) {
       ).replace(/%20/g, "+")}`
     : parameterString;
 
-  const signature = crypto
-    .createHash("md5")
-    .update(stringToHash)
-    .digest("hex");
+  console.log(
+    "🔥 ITN string to hash:",
+    stringToHash
+  );
+
+  const signature =
+    crypto
+      .createHash("md5")
+      .update(stringToHash)
+      .digest("hex");
+
+  console.log(
+    "🔥 Expected ITN signature:",
+    signature
+  );
 
   return signature;
 }
