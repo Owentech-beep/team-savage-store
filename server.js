@@ -564,58 +564,155 @@ app.post(
   "/api/payfast/notify",
   express.urlencoded({ extended: false }),
   async (req, res) => {
-
     try {
-
       console.log("🔥 PayFast ITN received");
 
       const data = req.body;
 
-      console.log("PayFast data:", data);
-
       // ---------------------------------
-      // Find the order
+      // 1. Basic validation
       // ---------------------------------
 
-      const orderId = data.m_payment_id;
-
-      if (!orderId) {
-        console.error("❌ No payment ID received from PayFast");
+      if (!data.m_payment_id) {
+        console.error("❌ Missing payment ID");
         return res.status(400).send("Missing payment ID");
       }
 
-      const order = await Order.findById(orderId);
+      if (!data.signature) {
+        console.error("❌ Missing PayFast signature");
+        return res.status(400).send("Missing signature");
+      }
+
+      // ---------------------------------
+      // 2. Verify PayFast signature
+      // ---------------------------------
+
+      const receivedSignature = data.signature;
+
+      // Make a copy without the received signature
+      const signatureData = { ...data };
+      delete signatureData.signature;
+
+      const expectedSignature =
+        generatePayfastSignature(signatureData);
+
+      if (receivedSignature !== expectedSignature) {
+        console.error("❌ Invalid PayFast signature");
+
+        console.error("Received:", receivedSignature);
+        console.error("Expected:", expectedSignature);
+
+        return res.status(400).send("Invalid signature");
+      }
+
+      console.log("✅ PayFast signature verified");
+
+      // ---------------------------------
+      // 3. Verify merchant ID
+      // ---------------------------------
+
+      if (
+        String(data.merchant_id) !==
+        String(process.env.PAYFAST_MERCHANT_ID)
+      ) {
+        console.error("❌ Invalid merchant ID");
+
+        return res.status(400).send("Invalid merchant ID");
+      }
+
+      console.log("✅ Merchant ID verified");
+
+      // ---------------------------------
+      // 4. Find the order
+      // ---------------------------------
+
+      const order = await Order.findById(
+        data.m_payment_id
+      );
 
       if (!order) {
-        console.error("❌ Order not found:", orderId);
+        console.error(
+          "❌ Order not found:",
+          data.m_payment_id
+        );
+
         return res.status(404).send("Order not found");
       }
 
       // ---------------------------------
-      // Check PayFast payment status
+      // 5. Verify payment amount
       // ---------------------------------
 
-      if (data.payment_status === "COMPLETE") {
+      const payfastAmount =
+        Number(data.amount_gross);
 
-        order.paymentStatus = "Paid";
+      const orderAmount =
+        Number(order.total);
 
-        order.paymentMethod = "PayFast";
+      if (
+        !Number.isFinite(payfastAmount) ||
+        !Number.isFinite(orderAmount)
+      ) {
+        console.error("❌ Invalid payment amount");
 
-        await order.save();
+        return res.status(400).send("Invalid amount");
+      }
 
-        console.log(
-          `💰 PAYMENT PAID — Order ${order._id}`
+      if (
+        Math.abs(payfastAmount - orderAmount) > 0.01
+      ) {
+        console.error(
+          "❌ Payment amount mismatch",
+          {
+            payfastAmount,
+            orderAmount,
+          }
         );
 
-      } else {
+        return res.status(400).send(
+          "Payment amount mismatch"
+        );
+      }
 
+      console.log("✅ Payment amount verified");
+
+      // ---------------------------------
+      // 6. Check payment status
+      // ---------------------------------
+
+      if (data.payment_status !== "COMPLETE") {
         console.log(
           `⚠️ PayFast payment status: ${data.payment_status}`
         );
 
+        return res.status(200).send("OK");
       }
 
-      // PayFast expects a successful response
+      // ---------------------------------
+      // 7. Prevent duplicate processing
+      // ---------------------------------
+
+      if (order.paymentStatus === "Paid") {
+        console.log(
+          `ℹ️ Order ${order._id} is already paid`
+        );
+
+        return res.status(200).send("OK");
+      }
+
+      // ---------------------------------
+      // 8. Mark order as paid
+      // ---------------------------------
+
+      order.paymentStatus = "Paid";
+      order.paymentMethod = "PayFast";
+
+      await order.save();
+
+      console.log(
+        `💰 PAYMENT PAID — Order ${order._id}`
+      );
+
       res.status(200).send("OK");
 
     } catch (error) {
@@ -625,10 +722,10 @@ app.post(
         error
       );
 
-      res.status(500).send("ITN processing failed");
-
+      res.status(500).send(
+        "ITN processing failed"
+      );
     }
-
   }
 );
 
