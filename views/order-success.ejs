@@ -19,9 +19,10 @@
             <!-- Success Icon -->
             <div class="mb-4">
 
-              <div class="d-inline-flex align-items-center justify-content-center
+              <div
+                class="d-inline-flex align-items-center justify-content-center
                           bg-success bg-opacity-10 rounded-circle"
-                   style="width: 100px; height: 100px;">
+                style="width: 100px; height: 100px;">
 
                 <i class="fa-solid fa-circle-check text-success fa-4x"></i>
 
@@ -117,16 +118,30 @@
             <!-- Buttons -->
             <div class="d-grid gap-3">
 
-              <a href="/shop"
-                 class="btn btn-warning btn-lg fw-semibold">
+              <!-- TRACK ORDER -->
+              <a
+                href="/track-order/<%= order._id %>"
+                class="btn btn-dark btn-lg fw-semibold">
+
+                <i class="fa-solid fa-location-dot me-2"></i>
+                Track My Order
+
+              </a>
+
+              <!-- CONTINUE SHOPPING -->
+              <a
+                href="/shop"
+                class="btn btn-warning btn-lg fw-semibold">
 
                 <i class="fa-solid fa-store me-2"></i>
                 Continue Shopping
 
               </a>
 
-              <a href="/"
-                 class="btn btn-outline-dark">
+              <!-- HOME -->
+              <a
+                href="/"
+                class="btn btn-outline-dark">
 
                 <i class="fa-solid fa-house me-2"></i>
                 Back to Home

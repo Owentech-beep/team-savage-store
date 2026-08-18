@@ -177,38 +177,206 @@ app.get("/admin", isAdmin, async (req, res) => {
     res.status(500).send("Error loading admin dashboard");
   }
 });
+
 // ===============================
 // UPDATE ORDER STATUS
 // ===============================
 app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
-  try {
-    await Order.findByIdAndUpdate(req.params.id, {
-      status: req.body.status,
-    });
 
-    console.log(`🔥 Order updated to ${req.body.status}`);
+  try {
+
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).send("Order not found");
+    }
+
+    const oldStatus = order.status;
+    const newStatus = req.body.status;
+
+    // Update order status
+    order.status = newStatus;
+
+    await order.save();
+
+    console.log(
+      `🔥 Order ${order._id} updated: ${oldStatus} → ${newStatus}`
+    );
+
+    // =====================================
+    // SEND STATUS EMAIL
+    // =====================================
+
+    if (
+      oldStatus !== newStatus &&
+      ["Processing", "Shipped", "Delivered"].includes(newStatus)
+    ) {
+
+      try {
+
+        let subject = "";
+        let heading = "";
+        let message = "";
+
+        if (newStatus === "Processing") {
+
+          subject =
+            `🔥 TEAM SAVAGE Order #${order._id
+              .toString()
+              .slice(-6)
+              .toUpperCase()} — Processing`;
+
+          heading = "Your Order Is Being Processed 🔥";
+
+          message = `
+            <p>
+              Great news! Your TEAM SAVAGE order is now being processed.
+            </p>
+
+            <p>
+              We're getting your items ready for you.
+            </p>
+          `;
+
+        }
+
+        if (newStatus === "Shipped") {
+
+          subject =
+            `📦 TEAM SAVAGE Order #${order._id
+              .toString()
+              .slice(-6)
+              .toUpperCase()} — Shipped`;
+
+          heading = "Your Order Has Shipped 📦";
+
+          message = `
+            <p>
+              Your TEAM SAVAGE order has been shipped!
+            </p>
+
+            <p>
+              Your order is now on its way to you.
+            </p>
+          `;
+
+        }
+
+        if (newStatus === "Delivered") {
+
+          subject =
+            `🎉 TEAM SAVAGE Order #${order._id
+              .toString()
+              .slice(-6)
+              .toUpperCase()} — Delivered`;
+
+          heading = "Your Order Has Been Delivered 🎉";
+
+          message = `
+            <p>
+              Your TEAM SAVAGE order has been delivered.
+            </p>
+
+            <p>
+              We hope you enjoy your gear!
+            </p>
+
+            <p>
+              Thank you for shopping with TEAM SAVAGE. 💪🔥
+            </p>
+          `;
+
+        }
+
+        await sendEmail({
+
+          to: order.customerEmail,
+
+          subject,
+
+          html: `
+
+            <div style="
+              font-family: Arial, sans-serif;
+              max-width: 600px;
+              margin: auto;
+              padding: 20px;
+            ">
+
+              <h2 style="color: #f0ad00;">
+                🔥 TEAM SAVAGE
+              </h2>
+
+              <h1>
+                ${heading}
+              </h1>
+
+              <p>
+                Hi ${order.customerName || "there"},
+              </p>
+
+              ${message}
+
+              <hr>
+
+              <p>
+                <strong>Order Number:</strong>
+                #${order._id
+                  .toString()
+                  .slice(-6)
+                  .toUpperCase()}
+              </p>
+
+              <p>
+                <strong>Order Total:</strong>
+                R${Number(order.total || 0).toFixed(2)}
+              </p>
+
+              <p>
+                <strong>Current Status:</strong>
+                ${newStatus}
+              </p>
+
+              <hr>
+
+              <p style="color: #777;">
+                Thank you for shopping with TEAM SAVAGE. 💪🔥
+              </p>
+
+            </div>
+
+          `,
+
+        });
+
+        console.log(
+          `📧 ${newStatus} email sent to ${order.customerEmail}`
+        );
+
+      } catch (emailError) {
+
+        console.error(
+          `❌ Failed to send ${newStatus} email:`,
+          emailError
+        );
+
+        // The order status was already successfully updated.
+        // Email failure should not undo the status change.
+      }
+    }
 
     res.redirect("/admin");
+
   } catch (error) {
-    console.error(error);
 
-    res.status(500).send("Error updating order status");
-  }
-});
+    console.error(
+      "❌ Error updating order status:",
+      error
+    );
 
-app.get("/admin", isAdmin, async (req, res) => {
-  try {
-    const products = await Product.find().sort({ createdAt: -1 });
-    const orders = await Order.find().sort({ createdAt: -1 });
-
-    res.render("admin", {
-      products,
-      orders,
-    });
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).send("Error loading admin dashboard");
+    res.status(500).send(
+      "Error updating order status"
+    );
   }
 });
 
@@ -224,6 +392,36 @@ app.get("/order-success/:id", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Error loading confirmation page");
+  }
+});
+
+// ===============================
+// TRACK ORDER
+// ===============================
+app.get("/track-order/:id", async (req, res) => {
+
+  try {
+
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).send("Order not found");
+    }
+
+    res.render("track-order", {
+      order,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "❌ Error loading order tracking:",
+      error
+    );
+
+    res.status(500).send(
+      "Error loading order tracking"
+    );
   }
 });
 
@@ -535,7 +733,9 @@ app.post(
   "/api/payfast/notify",
   express.urlencoded({ extended: false }),
   async (req, res) => {
+
     try {
+
       console.log("🔥 PayFast ITN received");
 
       const data = req.body;
@@ -545,13 +745,23 @@ app.post(
       // ---------------------------------
 
       if (!data.m_payment_id) {
+
         console.error("❌ Missing payment ID");
-        return res.status(400).send("Missing payment ID");
+
+        return res
+          .status(400)
+          .send("Missing payment ID");
+
       }
 
       if (!data.signature) {
+
         console.error("❌ Missing PayFast signature");
-        return res.status(400).send("Missing signature");
+
+        return res
+          .status(400)
+          .send("Missing signature");
+
       }
 
       // ---------------------------------
@@ -560,88 +770,166 @@ app.post(
 
       const receivedSignature = data.signature;
 
-      const expectedSignature = generatePayfastITNSignature(data);
+      const expectedSignature =
+        generatePayfastITNSignature(data);
 
-      if (receivedSignature.toLowerCase() !== expectedSignature.toLowerCase()) {
-        console.error("❌ Invalid PayFast signature");
+      if (
+        receivedSignature.toLowerCase() !==
+        expectedSignature.toLowerCase()
+      ) {
 
-        console.error("Received:", receivedSignature);
-        console.error("Expected:", expectedSignature);
+        console.error(
+          "❌ Invalid PayFast signature"
+        );
 
-        return res.status(400).send("Invalid signature");
+        console.error(
+          "Received:",
+          receivedSignature
+        );
+
+        console.error(
+          "Expected:",
+          expectedSignature
+        );
+
+        return res
+          .status(400)
+          .send("Invalid signature");
+
       }
 
-      console.log("✅ PayFast signature verified");
+      console.log(
+        "✅ PayFast signature verified"
+      );
 
       // ---------------------------------
       // 3. Verify merchant ID
       // ---------------------------------
 
       if (
-        String(data.merchant_id) !== String(process.env.PAYFAST_MERCHANT_ID)
+        String(data.merchant_id) !==
+        String(process.env.PAYFAST_MERCHANT_ID)
       ) {
-        console.error("❌ Invalid merchant ID");
 
-        return res.status(400).send("Invalid merchant ID");
+        console.error(
+          "❌ Invalid merchant ID"
+        );
+
+        return res
+          .status(400)
+          .send("Invalid merchant ID");
+
       }
 
-      console.log("✅ Merchant ID verified");
+      console.log(
+        "✅ Merchant ID verified"
+      );
 
       // ---------------------------------
       // 4. Find the order
       // ---------------------------------
 
-      const order = await Order.findById(data.m_payment_id);
+      const order =
+        await Order.findById(
+          data.m_payment_id
+        );
 
       if (!order) {
-        console.error("❌ Order not found:", data.m_payment_id);
 
-        return res.status(404).send("Order not found");
+        console.error(
+          "❌ Order not found:",
+          data.m_payment_id
+        );
+
+        return res
+          .status(404)
+          .send("Order not found");
+
       }
 
       // ---------------------------------
       // 5. Verify payment amount
       // ---------------------------------
 
-      const payfastAmount = Number(data.amount_gross);
+      const payfastAmount =
+        Number(data.amount_gross);
 
-      const orderAmount = Number(order.total);
+      const orderAmount =
+        Number(order.total);
 
-      if (!Number.isFinite(payfastAmount) || !Number.isFinite(orderAmount)) {
-        console.error("❌ Invalid payment amount");
+      if (
+        !Number.isFinite(payfastAmount) ||
+        !Number.isFinite(orderAmount)
+      ) {
 
-        return res.status(400).send("Invalid amount");
+        console.error(
+          "❌ Invalid payment amount"
+        );
+
+        return res
+          .status(400)
+          .send("Invalid amount");
+
       }
 
-      if (Math.abs(payfastAmount - orderAmount) > 0.01) {
-        console.error("❌ Payment amount mismatch", {
-          payfastAmount,
-          orderAmount,
-        });
+      if (
+        Math.abs(
+          payfastAmount - orderAmount
+        ) > 0.01
+      ) {
 
-        return res.status(400).send("Payment amount mismatch");
+        console.error(
+          "❌ Payment amount mismatch",
+          {
+            payfastAmount,
+            orderAmount,
+          }
+        );
+
+        return res
+          .status(400)
+          .send("Payment amount mismatch");
+
       }
 
-      console.log("✅ Payment amount verified");
+      console.log(
+        "✅ Payment amount verified"
+      );
 
       // ---------------------------------
       // 6. Check payment status
       // ---------------------------------
 
-      if (data.payment_status !== "COMPLETE") {
-        console.log(`⚠️ PayFast payment status: ${data.payment_status}`);
+      if (
+        data.payment_status !== "COMPLETE"
+      ) {
 
-        return res.status(200).send("OK");
+        console.log(
+          `⚠️ PayFast payment status: ${data.payment_status}`
+        );
+
+        return res
+          .status(200)
+          .send("OK");
+
       }
 
       // ---------------------------------
       // 7. Prevent duplicate processing
       // ---------------------------------
 
-      if (order.paymentStatus === "Paid") {
-        console.log(`ℹ️ Order ${order._id} is already paid`);
+      if (
+        order.paymentStatus === "Paid"
+      ) {
 
-        return res.status(200).send("OK");
+        console.log(
+          `ℹ️ Order ${order._id} is already paid`
+        );
+
+        return res
+          .status(200)
+          .send("OK");
+
       }
 
       // ---------------------------------
@@ -653,17 +941,55 @@ app.post(
 
       await order.save();
 
-      console.log(`💰 PAYMENT PAID — Order ${order._id}`);
+      console.log(
+        `💰 PAYMENT PAID — Order ${order._id}`
+      );
 
-      await sendOrderConfirmation(order);
+      // ---------------------------------
+      // 9. Send confirmation email
+      // ---------------------------------
+      // Do NOT let email failure affect
+      // the PayFast payment confirmation.
 
-      res.status(200).send("OK");
+      sendOrderConfirmation(order)
+        .then(() => {
+
+          console.log(
+            `📧 PayFast confirmation email sent — Order ${order._id}`
+          );
+
+        })
+        .catch((error) => {
+
+          console.error(
+            "❌ PayFast confirmation email failed:",
+            error
+          );
+
+        });
+
+      // ---------------------------------
+      // 10. Respond to PayFast immediately
+      // ---------------------------------
+
+      res
+        .status(200)
+        .send("OK");
+
     } catch (error) {
-      console.error("❌ PayFast ITN error:", error);
 
-      res.status(500).send("ITN processing failed");
+      console.error(
+        "❌ PayFast ITN error:",
+        error
+      );
+
+      res
+        .status(500)
+        .send("ITN processing failed");
+
     }
-  },
+
+  }
 );
 
 app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {

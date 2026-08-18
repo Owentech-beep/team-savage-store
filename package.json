@@ -4,9 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-  "start": "node --env-file=.env server.js",
-  "dev": "nodemon --exec \"node --env-file=.env\" server.js"
-},
+    "start": "node --env-file=.env server.js",
+    "dev": "nodemon --exec \"node --env-file=.env\" server.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -22,7 +22,8 @@
     "mongoose": "^9.9.2",
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
-    "nodemailer": "^9.0.5"
+    "nodemailer": "^9.0.5",
+    "resend": "^6.20.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

@@ -1,14 +1,6 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-
+const resend = new Resend(process.env.RESEND_API_KEY);
 // =====================================
 // GENERAL EMAIL FUNCTION
 // =====================================
@@ -22,32 +14,42 @@ export async function sendEmail({
 
   try {
 
-    await transporter.sendMail({
+    const { data, error } =
+      await resend.emails.send({
 
-      from: `"TEAM SAVAGE" <${process.env.EMAIL_USER}>`,
+        from: "TEAM SAVAGE <info@teamsavage.online>",
 
-      to,
+        to: [to],
 
-      subject,
+        subject,
 
-      html,
+        html,
 
-      replyTo,
+        ...(replyTo ? { replyTo } : {}),
 
-    });
+      });
 
-    console.log(`📧 Email sent successfully to ${to}`);
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    console.log(
+      `📧 Email sent successfully to ${to}`
+    );
+
+    return data;
 
   } catch (error) {
 
-    console.error("❌ Email failed:", error);
+    console.error(
+      "❌ Email failed:",
+      error
+    );
 
     throw error;
 
   }
 }
-
-
 // =====================================
 // ORDER CONFIRMATION EMAIL
 // =====================================
@@ -56,73 +58,81 @@ export async function sendOrderConfirmation(order) {
 
   try {
 
-    await transporter.sendMail({
+    const { data, error } =
+      await resend.emails.send({
 
-      from: `"TEAM SAVAGE" <${process.env.EMAIL_USER}>`,
+        from: "TEAM SAVAGE <info@teamsavage.online>",
 
-      to: order.customerEmail,
+        to: [order.customerEmail],
 
-      subject: `🔥 TEAM SAVAGE Order Confirmation #${order._id
-        .toString()
-        .slice(-6)
-        .toUpperCase()}`,
+        subject:
+          `🔥 TEAM SAVAGE Order Confirmation #${order._id
+            .toString()
+            .slice(-6)
+            .toUpperCase()}`,
 
-      html: `
+        html: `
 
-        <div style="
-          font-family: Arial, sans-serif;
-          max-width: 600px;
-          margin: auto;
-          padding: 20px;
-        ">
+          <div style="
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+          ">
 
-          <h2 style="color: #f0ad00;">
-            🔥 TEAM SAVAGE
-          </h2>
+            <h2 style="color: #f0ad00;">
+              🔥 TEAM SAVAGE
+            </h2>
 
-          <h1>
-            Order Confirmed!
-          </h1>
+            <h1>
+              Order Confirmed!
+            </h1>
 
-          <p>
-            Thank you for your order.
-          </p>
+            <p>
+              Thank you for your order.
+            </p>
 
-          <hr>
+            <hr>
 
-          <p>
-            <strong>Order Number:</strong>
-            #${order._id
-              .toString()
-              .slice(-6)
-              .toUpperCase()}
-          </p>
+            <p>
+              <strong>Order Number:</strong>
+              #${order._id
+                .toString()
+                .slice(-6)
+                .toUpperCase()}
+            </p>
 
-          <p>
-            <strong>Status:</strong>
-            ${order.status}
-          </p>
+            <p>
+              <strong>Status:</strong>
+              ${order.status}
+            </p>
 
-          <p>
-            <strong>Total:</strong>
-            R${Number(order.total).toFixed(2)}
-          </p>
+            <p>
+              <strong>Total:</strong>
+              R${Number(order.total || 0).toFixed(2)}
+            </p>
 
-          <hr>
+            <hr>
 
-          <h3>
-            Thank you for shopping with TEAM SAVAGE! 💪🔥
-          </h3>
+            <h3>
+              Thank you for shopping with TEAM SAVAGE! 💪🔥
+            </h3>
 
-        </div>
+          </div>
 
-      `,
+        `,
 
-    });
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
 
     console.log(
       `📧 Order confirmation sent to ${order.customerEmail}`
     );
+
+    return data;
 
   } catch (error) {
 
