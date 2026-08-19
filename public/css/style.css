@@ -576,8 +576,6 @@ body{
   overflow: hidden;
   border-radius: 16px;
 }
-
-
 /* =================================
    MOBILE PRODUCT DETAILS
 ================================= */
@@ -585,7 +583,7 @@ body{
 @media (max-width: 991px) {
 
   .product-details-page {
-    padding-top: 40px !important;
+    padding-top: 90px !important;
   }
 
   .product-carousel-image {

@@ -153,20 +153,12 @@
 
                             <button
                                 type="button"
-                                onclick="startCheckout('EFT')"
+                                onclick="startCheckout()"
                                 class="btn btn-warning w-100 btn-lg">
 
                                 <i
                                     class="fa-solid fa-building-columns me-2"></i>
                                 Pay with EFT
-
-                            </button>
-
-                            <button onclick="payWithPayFast()"
-                                class="btn btn-outline-dark w-100 btn-lg">
-
-                                <i class="fa-solid fa-credit-card me-2"></i>
-                                Pay with Card
 
                             </button>
 
@@ -345,7 +337,7 @@ async function createOrder(paymentMethod) {
 
 
     console.log(
-        "🔥 Order created:",
+        " Order created:",
         result.orderId
     );
 
@@ -353,140 +345,6 @@ async function createOrder(paymentMethod) {
     return result.orderId;
 
 }
-
-
-async function payWithPayFast() {
-
-    try {
-
-        console.log(
-            "💳 Starting PayFast payment..."
-        );
-
-
-        // 1. Create pending order
-
-        const orderId =
-            await createOrder("PayFast");
-
-
-        if (!orderId) {
-
-            return;
-
-        }
-
-
-        // 2. Ask server to create PayFast request
-
-        const response =
-            await fetch(
-                "/api/payfast/create",
-                {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json",
-
-                    },
-
-                    body:
-                        JSON.stringify({
-                            orderId: orderId
-                        }),
-
-                }
-            );
-
-
-        const result =
-            await response.json();
-
-
-        if (!response.ok || !result.success) {
-
-            throw new Error(
-                result.message ||
-                "Unable to start PayFast payment."
-            );
-
-        }
-
-
-        console.log(
-            "🔥 PayFast payment created"
-        );
-
-
-        // 3. Create PayFast form
-
-        const form =
-            document.createElement("form");
-
-
-        form.method = "POST";
-
-
-        form.action =
-            result.payfastUrl;
-
-
-        // 4. Add PayFast fields
-
-        Object.entries(
-            result.paymentData
-        ).forEach(([key, value]) => {
-
-            const input =
-                document.createElement("input");
-
-
-            input.type =
-                "hidden";
-
-
-            input.name =
-                key;
-
-
-            input.value =
-                value;
-
-
-            form.appendChild(input);
-
-        });
-
-
-        // 5. Add form to page
-
-        document.body.appendChild(form);
-
-
-        // 6. Send customer to PayFast
-
-        form.submit();
-
-
-    } catch (error) {
-
-        console.error(
-            "❌ PayFast error:",
-            error
-        );
-
-
-        alert(
-            "We couldn't start the payment. Please try again."
-        );
-
-    }
-
-}
-
 
 async function placeOrder(paymentMethod) {
 

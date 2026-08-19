@@ -97,6 +97,25 @@
         Send Us a Message
       </h3>
 
+      <% if (typeof success !== "undefined" && success) { %>
+
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+
+    <i class="fa-solid fa-circle-check me-2"></i>
+
+    <strong>Message sent successfully!</strong>
+    We'll get back to you soon.
+
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert">
+    </button>
+
+  </div>
+
+<% } %>
+
       <form
         action="/contact"
         method="POST">

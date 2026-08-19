@@ -90,7 +90,7 @@
           <%= product.description %>
         </p>
 
-        <!-- 🔥 AVAILABLE SIZES -->
+        <!--  AVAILABLE SIZES -->
         <% if (product.sizes && product.sizes.length > 0) { %>
 
         <div class="mb-3">
@@ -117,7 +117,7 @@
 
         <% } %>
 
-        <!-- 🔥 AVAILABLE COLOURS -->
+        <!--  AVAILABLE COLOURS -->
         <% if (product.colors && product.colors.length > 0) { %>
 
         <div class="mb-4">
@@ -144,7 +144,7 @@
 
         <% } %>
 
-        <!-- 🔥 QUANTITY -->
+        <!-- QUANTITY -->
         <div class="mb-4">
 
           <label class="form-label fw-bold">
@@ -159,7 +159,7 @@
 
         </div>
 
-        <!-- 🔥 ADD TO CART -->
+        <!--  ADD TO CART -->
         <button class="btn btn-warning btn-lg add-to-cart"
           data-id="<%= product._id %>"
           data-name="<%= product.name %>"

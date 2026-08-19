@@ -4,16 +4,13 @@ import mongoose from "mongoose";
 import Product from "./models/Product.js";
 import Order from "./models/Order.js";
 import multer from "multer";
-import {
-  generatePayfastSignature,
-  generatePayfastITNSignature,
-} from "./utils/payfast.js";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import path from "path";
 import {
   sendOrderConfirmation,
-  sendEmail
+  sendAdminOrderNotification,
+  sendEmail,
 } from "./utils/mailer.js";
 import session from "express-session";
 import bcrypt from "bcrypt";
@@ -24,9 +21,9 @@ const port = process.env.PORT || 3000;
 try {
   await mongoose.connect(process.env.MONGODB_URI);
 
-  console.log("🔥 MongoDB connected successfully");
+  console.log("MongoDB connected successfully");
 } catch (error) {
-  console.error("❌ MongoDB connection error:", error);
+  console.error("MongoDB connection error:", error);
 
   process.exit(1);
 }
@@ -85,7 +82,11 @@ function isAdmin(req, res, next) {
 // Routes
 app.get("/", async (req, res) => {
   try {
-    const products = await Product.find().limit(4);
+    const products = await Product.find({
+      category: { $not: /^accessories$/i },
+    })
+      .sort({ createdAt: -1 })
+      .limit(4);
 
     res.render("index", { products });
   } catch (error) {
@@ -96,7 +97,9 @@ app.get("/", async (req, res) => {
 
 app.get("/shop", async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const products = await Product.find({
+      category: { $not: /^accessories$/i },
+    }).sort({ createdAt: -1 });
 
     res.render("shop", { products });
   } catch (error) {
@@ -123,7 +126,7 @@ app.get("/accessories", async (req, res) => {
 
 app.get("/product/:id", async (req, res) => {
   try {
-    // 🔥 Check if ID is valid
+    // Check if ID is valid
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(404).send("Invalid product ID");
     }
@@ -182,9 +185,7 @@ app.get("/admin", isAdmin, async (req, res) => {
 // UPDATE ORDER STATUS
 // ===============================
 app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
-
   try {
-
     const order = await Order.findById(req.params.id);
 
     if (!order) {
@@ -199,9 +200,7 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
 
     await order.save();
 
-    console.log(
-      `🔥 Order ${order._id} updated: ${oldStatus} → ${newStatus}`
-    );
+    console.log(`Order ${order._id} updated: ${oldStatus} → ${newStatus}`);
 
     // =====================================
     // SEND STATUS EMAIL
@@ -211,22 +210,18 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
       oldStatus !== newStatus &&
       ["Processing", "Shipped", "Delivered"].includes(newStatus)
     ) {
-
       try {
-
         let subject = "";
         let heading = "";
         let message = "";
 
         if (newStatus === "Processing") {
+          subject = `TEAM SAVAGE Order #${order._id
+            .toString()
+            .slice(-6)
+            .toUpperCase()} — Processing`;
 
-          subject =
-            `🔥 TEAM SAVAGE Order #${order._id
-              .toString()
-              .slice(-6)
-              .toUpperCase()} — Processing`;
-
-          heading = "Your Order Is Being Processed 🔥";
+          heading = "Your Order Is Being Processed ";
 
           message = `
             <p>
@@ -237,16 +232,13 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
               We're getting your items ready for you.
             </p>
           `;
-
         }
 
         if (newStatus === "Shipped") {
-
-          subject =
-            `📦 TEAM SAVAGE Order #${order._id
-              .toString()
-              .slice(-6)
-              .toUpperCase()} — Shipped`;
+          subject = `TEAM SAVAGE Order #${order._id
+            .toString()
+            .slice(-6)
+            .toUpperCase()} — Shipped`;
 
           heading = "Your Order Has Shipped 📦";
 
@@ -259,16 +251,13 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
               Your order is now on its way to you.
             </p>
           `;
-
         }
 
         if (newStatus === "Delivered") {
-
-          subject =
-            `🎉 TEAM SAVAGE Order #${order._id
-              .toString()
-              .slice(-6)
-              .toUpperCase()} — Delivered`;
+          subject = `TEAM SAVAGE Order #${order._id
+            .toString()
+            .slice(-6)
+            .toUpperCase()} — Delivered`;
 
           heading = "Your Order Has Been Delivered 🎉";
 
@@ -282,14 +271,12 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
             </p>
 
             <p>
-              Thank you for shopping with TEAM SAVAGE. 💪🔥
+              Thank you for shopping with TEAM SAVAGE.
             </p>
           `;
-
         }
 
         await sendEmail({
-
           to: order.customerEmail,
 
           subject,
@@ -304,7 +291,7 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
             ">
 
               <h2 style="color: #f0ad00;">
-                🔥 TEAM SAVAGE
+                 TEAM SAVAGE
               </h2>
 
               <h1>
@@ -321,10 +308,7 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
 
               <p>
                 <strong>Order Number:</strong>
-                #${order._id
-                  .toString()
-                  .slice(-6)
-                  .toUpperCase()}
+                #${order._id.toString().slice(-6).toUpperCase()}
               </p>
 
               <p>
@@ -340,25 +324,17 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
               <hr>
 
               <p style="color: #777;">
-                Thank you for shopping with TEAM SAVAGE. 💪🔥
+                Thank you for shopping with TEAM SAVAGE.
               </p>
 
             </div>
 
           `,
-
         });
 
-        console.log(
-          `📧 ${newStatus} email sent to ${order.customerEmail}`
-        );
-
+        console.log(` ${newStatus} email sent to ${order.customerEmail}`);
       } catch (emailError) {
-
-        console.error(
-          `❌ Failed to send ${newStatus} email:`,
-          emailError
-        );
+        console.error(` Failed to send ${newStatus} email:`, emailError);
 
         // The order status was already successfully updated.
         // Email failure should not undo the status change.
@@ -366,17 +342,10 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
     }
 
     res.redirect("/admin");
-
   } catch (error) {
+    console.error(" Error updating order status:", error);
 
-    console.error(
-      "❌ Error updating order status:",
-      error
-    );
-
-    res.status(500).send(
-      "Error updating order status"
-    );
+    res.status(500).send("Error updating order status");
   }
 });
 
@@ -399,9 +368,7 @@ app.get("/order-success/:id", async (req, res) => {
 // TRACK ORDER
 // ===============================
 app.get("/track-order/:id", async (req, res) => {
-
   try {
-
     const order = await Order.findById(req.params.id);
 
     if (!order) {
@@ -411,17 +378,10 @@ app.get("/track-order/:id", async (req, res) => {
     res.render("track-order", {
       order,
     });
-
   } catch (error) {
+    console.error(" Error loading order tracking:", error);
 
-    console.error(
-      "❌ Error loading order tracking:",
-      error
-    );
-
-    res.status(500).send(
-      "Error loading order tracking"
-    );
+    res.status(500).send("Error loading order tracking");
   }
 });
 
@@ -437,7 +397,7 @@ app.get("/eft-payment/:id", async (req, res) => {
       order,
     });
   } catch (error) {
-    console.error("❌ Error loading EFT payment page:", error);
+    console.error("Error loading EFT payment page:", error);
 
     res.status(500).send("Error loading EFT payment page");
   }
@@ -471,7 +431,14 @@ app.get("/category/:name", async (req, res) => {
 });
 
 app.get("/contact", (req, res) => {
-  res.render("contact");
+
+  const success =
+    req.query.success === "true";
+
+  res.render("contact", {
+    success,
+  });
+
 });
 
 app.post("/contact", async (req, res) => {
@@ -506,7 +473,7 @@ app.post("/contact", async (req, res) => {
         ">
 
           <h2 style="color: #f0ad00;">
-            🔥 New TEAM SAVAGE Customer Enquiry
+             New TEAM SAVAGE Customer Enquiry
           </h2>
 
           <hr>
@@ -551,11 +518,11 @@ app.post("/contact", async (req, res) => {
       `,
     });
 
-    console.log("📧 Customer enquiry email sent!");
+    console.log(" Customer enquiry email sent!");
 
-    res.redirect("/contact");
+    res.redirect("/contact?success=true");
   } catch (error) {
-    console.error("❌ Failed to send enquiry email:", error);
+    console.error(" Failed to send enquiry email:", error);
 
     res.status(500).send("Failed to send enquiry email.");
   }
@@ -610,17 +577,19 @@ app.post(
         featured: req.body.featured === "true",
       });
 
-      console.log("🔥 Product saved with Cloudinary images");
+      console.log(" Product saved with Cloudinary images");
 
       res.redirect("/admin");
     } catch (error) {
-      console.error("❌ Error saving product:", error);
+      console.error(" Error saving product:", error);
 
       res.status(500).send("Error saving product");
     }
   },
 );
-
+// =====================================
+// CREATE ORDER — EFT ONLY
+// =====================================
 app.post("/api/orders", express.json(), async (req, res) => {
   try {
     const order = await Order.create({
@@ -646,68 +615,15 @@ app.post("/api/orders", express.json(), async (req, res) => {
 
       total: req.body.total,
 
-      paymentMethod: req.body.paymentMethod,
+      // EFT ONLY
+      paymentMethod: "EFT",
 
       paymentStatus: "Pending",
 
       status: "Pending",
     });
 
-    console.log("🔥 Order saved:", order._id);
-
-    app.post("/api/payfast/create", async (req, res) => {
-      try {
-        const { orderId } = req.body;
-
-        const order = await Order.findById(orderId);
-
-        if (!order) {
-          return res.status(404).json({
-            success: false,
-            message: "Order not found",
-          });
-        }
-
-        const paymentData = {
-          merchant_id: process.env.PAYFAST_MERCHANT_ID,
-
-          merchant_key: process.env.PAYFAST_MERCHANT_KEY,
-
-          return_url: `${process.env.BASE_URL}/order-success/${order._id}`,
-
-          cancel_url: `${process.env.BASE_URL}/checkout`,
-
-          notify_url: `${process.env.BASE_URL}/api/payfast/notify`,
-
-          name_first: order.customerName?.split(" ")[0] || "Customer",
-
-          name_last: order.customerName?.split(" ").slice(1).join(" ") || "",
-
-          email_address: order.customerEmail,
-
-          m_payment_id: order._id.toString(),
-
-          amount: Number(order.total).toFixed(2),
-
-          item_name: `TEAM SAVAGE Order ${order._id.toString().slice(-6)}`,
-        };
-
-        paymentData.signature = generatePayfastSignature(paymentData);
-
-        res.json({
-          success: true,
-          paymentData,
-          payfastUrl: process.env.PAYFAST_URL,
-        });
-      } catch (error) {
-        console.error("❌ PayFast creation error:", error);
-
-        res.status(500).json({
-          success: false,
-          message: "Unable to create PayFast payment",
-        });
-      }
-    });
+    console.log(" EFT Order saved:", order._id);
 
     res.status(201).json({
       success: true,
@@ -715,7 +631,7 @@ app.post("/api/orders", express.json(), async (req, res) => {
       orderId: order._id,
     });
   } catch (error) {
-    console.error("❌ Error saving order:", error);
+    console.error("Error saving EFT order:", error);
 
     res.status(500).json({
       success: false,
@@ -724,273 +640,6 @@ app.post("/api/orders", express.json(), async (req, res) => {
     });
   }
 });
-
-// =====================================
-// PAYFAST ITN / PAYMENT NOTIFICATION
-// =====================================
-
-app.post(
-  "/api/payfast/notify",
-  express.urlencoded({ extended: false }),
-  async (req, res) => {
-
-    try {
-
-      console.log("🔥 PayFast ITN received");
-
-      const data = req.body;
-
-      // ---------------------------------
-      // 1. Basic validation
-      // ---------------------------------
-
-      if (!data.m_payment_id) {
-
-        console.error("❌ Missing payment ID");
-
-        return res
-          .status(400)
-          .send("Missing payment ID");
-
-      }
-
-      if (!data.signature) {
-
-        console.error("❌ Missing PayFast signature");
-
-        return res
-          .status(400)
-          .send("Missing signature");
-
-      }
-
-      // ---------------------------------
-      // 2. Verify PayFast signature
-      // ---------------------------------
-
-      const receivedSignature = data.signature;
-
-      const expectedSignature =
-        generatePayfastITNSignature(data);
-
-      if (
-        receivedSignature.toLowerCase() !==
-        expectedSignature.toLowerCase()
-      ) {
-
-        console.error(
-          "❌ Invalid PayFast signature"
-        );
-
-        console.error(
-          "Received:",
-          receivedSignature
-        );
-
-        console.error(
-          "Expected:",
-          expectedSignature
-        );
-
-        return res
-          .status(400)
-          .send("Invalid signature");
-
-      }
-
-      console.log(
-        "✅ PayFast signature verified"
-      );
-
-      // ---------------------------------
-      // 3. Verify merchant ID
-      // ---------------------------------
-
-      if (
-        String(data.merchant_id) !==
-        String(process.env.PAYFAST_MERCHANT_ID)
-      ) {
-
-        console.error(
-          "❌ Invalid merchant ID"
-        );
-
-        return res
-          .status(400)
-          .send("Invalid merchant ID");
-
-      }
-
-      console.log(
-        "✅ Merchant ID verified"
-      );
-
-      // ---------------------------------
-      // 4. Find the order
-      // ---------------------------------
-
-      const order =
-        await Order.findById(
-          data.m_payment_id
-        );
-
-      if (!order) {
-
-        console.error(
-          "❌ Order not found:",
-          data.m_payment_id
-        );
-
-        return res
-          .status(404)
-          .send("Order not found");
-
-      }
-
-      // ---------------------------------
-      // 5. Verify payment amount
-      // ---------------------------------
-
-      const payfastAmount =
-        Number(data.amount_gross);
-
-      const orderAmount =
-        Number(order.total);
-
-      if (
-        !Number.isFinite(payfastAmount) ||
-        !Number.isFinite(orderAmount)
-      ) {
-
-        console.error(
-          "❌ Invalid payment amount"
-        );
-
-        return res
-          .status(400)
-          .send("Invalid amount");
-
-      }
-
-      if (
-        Math.abs(
-          payfastAmount - orderAmount
-        ) > 0.01
-      ) {
-
-        console.error(
-          "❌ Payment amount mismatch",
-          {
-            payfastAmount,
-            orderAmount,
-          }
-        );
-
-        return res
-          .status(400)
-          .send("Payment amount mismatch");
-
-      }
-
-      console.log(
-        "✅ Payment amount verified"
-      );
-
-      // ---------------------------------
-      // 6. Check payment status
-      // ---------------------------------
-
-      if (
-        data.payment_status !== "COMPLETE"
-      ) {
-
-        console.log(
-          `⚠️ PayFast payment status: ${data.payment_status}`
-        );
-
-        return res
-          .status(200)
-          .send("OK");
-
-      }
-
-      // ---------------------------------
-      // 7. Prevent duplicate processing
-      // ---------------------------------
-
-      if (
-        order.paymentStatus === "Paid"
-      ) {
-
-        console.log(
-          `ℹ️ Order ${order._id} is already paid`
-        );
-
-        return res
-          .status(200)
-          .send("OK");
-
-      }
-
-      // ---------------------------------
-      // 8. Mark order as paid
-      // ---------------------------------
-
-      order.paymentStatus = "Paid";
-      order.paymentMethod = "PayFast";
-
-      await order.save();
-
-      console.log(
-        `💰 PAYMENT PAID — Order ${order._id}`
-      );
-
-      // ---------------------------------
-      // 9. Send confirmation email
-      // ---------------------------------
-      // Do NOT let email failure affect
-      // the PayFast payment confirmation.
-
-      sendOrderConfirmation(order)
-        .then(() => {
-
-          console.log(
-            `📧 PayFast confirmation email sent — Order ${order._id}`
-          );
-
-        })
-        .catch((error) => {
-
-          console.error(
-            "❌ PayFast confirmation email failed:",
-            error
-          );
-
-        });
-
-      // ---------------------------------
-      // 10. Respond to PayFast immediately
-      // ---------------------------------
-
-      res
-        .status(200)
-        .send("OK");
-
-    } catch (error) {
-
-      console.error(
-        "❌ PayFast ITN error:",
-        error
-      );
-
-      res
-        .status(500)
-        .send("ITN processing failed");
-
-    }
-
-  }
-);
 
 app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
   try {
@@ -1011,19 +660,20 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
 
     await order.save();
 
-    console.log(`💰 EFT PAYMENT CONFIRMED — Order ${order._id}`);
+    console.log(` EFT PAYMENT CONFIRMED — Order ${order._id}`);
 
-    // 📧 TEMPORARY EMAIL DEBUGGING
-    console.log("📧 About to send EFT confirmation email...");
+    //  TEMPORARY EMAIL DEBUGGING
+    console.log(" About to send EFT confirmation email...");
 
     await sendOrderConfirmation(order);
+    await sendAdminOrderNotification(order);
 
-    console.log("📧 EFT confirmation function finished.");
+    console.log(" EFT confirmation function finished.");
 
     // Redirect back to admin
     res.redirect("/admin");
   } catch (error) {
-    console.error("❌ Error confirming EFT payment:", error);
+    console.error(" Error confirming EFT payment:", error);
 
     res.status(500).send("Unable to confirm payment");
   }
@@ -1033,7 +683,7 @@ app.post("/admin/delete-product/:id", isAdmin, async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
 
-    console.log("🗑️ Product deleted");
+    console.log(" Product deleted");
 
     res.redirect("/admin");
   } catch (error) {
@@ -1055,11 +705,11 @@ app.post("/admin/reset-store", isAdmin, async (req, res) => {
     // Delete all customer orders
     await Order.deleteMany({});
 
-    console.log("🔥 TEAM SAVAGE store has been completely reset");
+    console.log(" TEAM SAVAGE store has been completely reset");
 
     res.redirect("/admin");
   } catch (error) {
-    console.error("❌ Error resetting store:", error);
+    console.error(" Error resetting store:", error);
 
     res.status(500).send("Error resetting store");
   }
@@ -1069,7 +719,7 @@ app.post("/api/orders", express.json(), async (req, res) => {
   try {
     const order = await Order.create(req.body);
 
-    console.log("🔥 Order saved:", order._id);
+    console.log(" Order saved:", order._id);
 
     res.status(201).json({
       success: true,
@@ -1126,5 +776,5 @@ app.get("/logout", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`🔥 TEAM SAVAGE running on http://localhost:${port}`);
+  console.log(` TEAM SAVAGE running on http://localhost:${port}`);
 });

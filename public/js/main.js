@@ -1,4 +1,4 @@
-async function startCheckout(paymentMethod) {
+async function startCheckout() {
 
   const form = document.getElementById("checkout-form");
 
@@ -52,7 +52,9 @@ async function startCheckout(paymentMethod) {
 
   const subtotal = cart.reduce(
     (sum, item) =>
-      sum + Number(item.price) * Number(item.quantity),
+      sum +
+      Number(item.price) *
+      Number(item.quantity),
     0
   );
 
@@ -63,7 +65,7 @@ async function startCheckout(paymentMethod) {
 
 
   // ---------------------------------
-  // Create order
+  // Create EFT order
   // ---------------------------------
 
   const orderData = {
@@ -85,8 +87,11 @@ async function startCheckout(paymentMethod) {
     },
 
     items: cart.map(item => ({
+
       productId:
-        item.productId || item._id || "",
+        item.productId ||
+        item._id ||
+        "",
 
       name:
         item.name,
@@ -102,6 +107,7 @@ async function startCheckout(paymentMethod) {
 
       color:
         item.color || "",
+
     })),
 
     subtotal,
@@ -110,13 +116,17 @@ async function startCheckout(paymentMethod) {
 
     total,
 
-    paymentMethod:
-      paymentMethod,
+    // EFT ONLY
+    paymentMethod: "EFT",
 
-    paymentStatus:
-      "Pending",
+    paymentStatus: "Pending",
+
   };
 
+
+  // ---------------------------------
+  // Save order
+  // ---------------------------------
 
   try {
 
@@ -139,7 +149,7 @@ async function startCheckout(paymentMethod) {
       await response.json();
 
 
-    if (!result.success) {
+    if (!response.ok || !result.success) {
 
       alert(
         result.message ||
@@ -151,24 +161,19 @@ async function startCheckout(paymentMethod) {
 
 
     // ---------------------------------
-    // EFT
+    // Order created successfully
     // ---------------------------------
 
-    if (paymentMethod === "EFT") {
+    localStorage.removeItem("cart");
 
-      localStorage.removeItem("cart");
-
-      window.location.href =
-        `/eft-payment/${result.orderId}`;
-
-      return;
-    }
+    window.location.href =
+      `/eft-payment/${result.orderId}`;
 
 
   } catch (error) {
 
     console.error(
-      "❌ Checkout error:",
+      " Checkout error:",
       error
     );
 

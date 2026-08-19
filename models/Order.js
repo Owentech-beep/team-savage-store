@@ -35,7 +35,7 @@ const orderSchema = new mongoose.Schema({
   // Payment
   paymentMethod: {
     type: String,
-    default: "PayFast",
+    default: "EFT",
   },
 
   paymentStatus: {
@@ -55,9 +55,6 @@ const orderSchema = new mongoose.Schema({
     ],
     default: "Pending",
   },
-
-  // PayFast reference
-  payfastPaymentId: String,
 
   createdAt: {
     type: Date,
