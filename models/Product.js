@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
+
   name: {
     type: String,
     required: true,
@@ -22,16 +23,24 @@ const productSchema = new mongoose.Schema({
     required: true,
   },
 
-  // 🔥 Additional gallery images
+  // Additional gallery images
   gallery: [String],
 
   description: String,
 
-  // 🔥 Available colours
+  // Available colours
   colors: [String],
 
-  // 🔥 Available sizes
+  // Available sizes
   sizes: [String],
+
+  // Product inventory
+  stock: {
+    type: Number,
+    required: true,
+    default: 0,
+    min: 0,
+  },
 
   featured: {
     type: Boolean,

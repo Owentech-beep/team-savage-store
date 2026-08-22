@@ -13,88 +13,124 @@
 
     <div class="row g-4">
 
-  <% products.forEach(product => { %>
+      <% products.forEach(product => { %>
 
-    <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-3">
 
-      <div class="featured-product-card h-100 d-flex flex-column">
+          <div class="featured-product-card h-100 d-flex flex-column">
 
-        <!-- PRODUCT IMAGE -->
+            <!-- PRODUCT IMAGE -->
+            <div class="featured-product-image d-flex align-items-center justify-content-center">
 
-        <div class="featured-product-image d-flex align-items-center justify-content-center">
+              <img src="<%= product.image %>"
+                   class="img-fluid"
+                   alt="<%= product.name %>">
 
-          <img src="<%= product.image %>"
-               class="img-fluid"
-               alt="<%= product.name %>">
+            </div>
 
-        </div>
+            <!-- PRODUCT INFO -->
+            <div class="p-4 text-center d-flex flex-column flex-grow-1">
 
+              <p class="text-muted small mb-2 text-uppercase">
+                <%= product.category %>
+              </p>
 
-        <!-- PRODUCT INFO -->
+              <h5 class="fw-bold mb-3">
+                <%= product.name %>
+              </h5>
 
-        <div class="p-4 text-center d-flex flex-column flex-grow-1">
+              <p class="text-warning fw-bold fs-5 mb-2">
+                R<%= Number(product.price).toFixed(2) %>
+              </p>
 
-          <p class="text-muted small mb-2 text-uppercase">
-            <%= product.category %>
-          </p>
+              <!-- STOCK STATUS -->
+              <div class="mb-4">
 
-          <h5 class="fw-bold mb-3">
-            <%= product.name %>
-          </h5>
+                <% if (!product.stock || product.stock <= 0) { %>
 
-          <p class="text-warning fw-bold fs-5 mb-4">
-            R<%= product.price %>.00
-          </p>
+                  <span class="badge bg-danger">
+                    <i class="fa-solid fa-circle-xmark me-1"></i>
+                    Out of Stock
+                  </span>
 
+                <% } else if (product.stock <= 5) { %>
 
-          <!-- BUTTONS -->
+                  <span class="badge bg-warning text-dark">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                    Only <%= product.stock %> left
+                  </span>
 
-          <div class="mt-auto d-grid gap-2">
+                <% } else { %>
 
-            <a href="/product/<%= product._id %>"
-               class="btn btn-outline-dark">
+                  <span class="badge bg-success">
+                    <i class="fa-solid fa-circle-check me-1"></i>
+                    In Stock — <%= product.stock %> left
+                  </span>
 
-              View Product
+                <% } %>
 
-            </a>
+              </div>
 
+              <!-- BUTTONS -->
+              <div class="mt-auto d-grid gap-2">
 
-            <% if (["Bags", "Bottles", "Tumblers", "Gym Straps"].includes(product.category)) { %>
+                <a href="/product/<%= product._id %>"
+                   class="btn btn-outline-dark">
 
-              <button class="btn btn-warning add-to-cart"
-                      data-id="<%= product._id %>"
-                      data-name="<%= product.name %>"
-                      data-price="<%= product.price %>"
-                      data-image="<%= product.image %>">
+                  View Product
 
-                <i class="fa-solid fa-cart-shopping me-2"></i>
-                Add to Cart
+                </a>
 
-              </button>
+                <% if (!product.stock || product.stock <= 0) { %>
 
-            <% } else { %>
+                  <button
+                    class="btn btn-secondary"
+                    disabled>
 
-              <a href="/product/<%= product._id %>"
-                 class="btn btn-warning">
+                    <i class="fa-solid fa-ban me-2"></i>
+                    Out of Stock
 
-                <i class="fa-solid fa-shirt me-2"></i>
-                Choose Size & Colour
+                  </button>
 
-              </a>
+                <% } else if (["Bags", "Bottles", "Tumblers", "Gym Straps"].includes(product.category)) { %>
 
-            <% } %>
+                  <button class="btn btn-warning add-to-cart"
+                          data-id="<%= product._id %>"
+                          data-name="<%= product.name %>"
+                          data-price="<%= product.price %>"
+                          data-image="<%= product.image %>"
+                          data-stock="<%= product.stock %>">
+
+                    <i class="fa-solid fa-cart-shopping me-2"></i>
+                    Add to Cart
+
+                  </button>
+
+                <% } else { %>
+
+                  <a href="/product/<%= product._id %>"
+                     class="btn btn-warning">
+
+                    <i class="fa-solid fa-shirt me-2"></i>
+                    Choose Size & Colour
+
+                  </a>
+
+                <% } %>
+
+              </div>
+
+            </div>
 
           </div>
 
         </div>
 
-      </div>
+      <% }) %>
 
     </div>
 
-  <% }) %>
-
-</div>
+  </div>
 </section>
 
 <%- include("partials/footer") %>

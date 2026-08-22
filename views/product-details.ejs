@@ -13,7 +13,6 @@
           class="carousel slide"
           data-bs-ride="carousel">
 
-          <!-- CAROUSEL IMAGES -->
           <div class="carousel-inner rounded shadow-sm">
 
             <!-- MAIN PRODUCT IMAGE -->
@@ -28,17 +27,17 @@
             <!-- GALLERY IMAGES -->
             <% if (product.gallery && product.gallery.length > 0) { %>
 
-            <% product.gallery.forEach((image, index) => { %>
+              <% product.gallery.forEach((image, index) => { %>
 
-            <div class="carousel-item">
+                <div class="carousel-item">
 
-              <img src="<%= image %>"
-                class="d-block w-100 product-carousel-image"
-                alt="<%= product.name %> image <%= index + 2 %>">
+                  <img src="<%= image %>"
+                    class="d-block w-100 product-carousel-image"
+                    alt="<%= product.name %> image <%= index + 2 %>">
 
-            </div>
+                </div>
 
-            <% }) %>
+              <% }) %>
 
             <% } %>
 
@@ -51,10 +50,7 @@
             data-bs-slide="prev">
 
             <span class="carousel-control-prev-icon"></span>
-
-            <span class="visually-hidden">
-              Previous
-            </span>
+            <span class="visually-hidden">Previous</span>
 
           </button>
 
@@ -65,10 +61,7 @@
             data-bs-slide="next">
 
             <span class="carousel-control-next-icon"></span>
-
-            <span class="visually-hidden">
-              Next
-            </span>
+            <span class="visually-hidden">Next</span>
 
           </button>
 
@@ -76,100 +69,152 @@
 
       </div>
 
+      <!-- PRODUCT INFORMATION -->
       <div class="col-lg-6 product-info">
 
         <h1 class="fw-bold mb-3">
           <%= product.name %>
         </h1>
 
-        <p class="text-warning fw-bold fs-3 mb-3">
-          R<%= product.price %>.00
+        <p class="text-warning fw-bold fs-3 mb-2">
+          R<%= Number(product.price).toFixed(2) %>
         </p>
+
+        <!-- STOCK STATUS -->
+        <div class="mb-3">
+
+          <% if (!product.stock || product.stock <= 0) { %>
+
+            <span class="badge bg-danger fs-6">
+              <i class="fa-solid fa-circle-xmark me-1"></i>
+              Out of Stock
+            </span>
+
+          <% } else if (product.stock <= 5) { %>
+
+            <span class="badge bg-warning text-dark fs-6">
+              <i class="fa-solid fa-triangle-exclamation me-1"></i>
+              Only <%= product.stock %> left
+            </span>
+
+          <% } else { %>
+
+            <span class="badge bg-success fs-6">
+              <i class="fa-solid fa-circle-check me-1"></i>
+              In Stock — <%= product.stock %> left
+            </span>
+
+          <% } %>
+
+        </div>
 
         <p class="text-muted mb-4">
           <%= product.description %>
         </p>
 
-        <!--  AVAILABLE SIZES -->
-        <% if (product.sizes && product.sizes.length > 0) { %>
+        <!-- Only show purchase options when in stock -->
+        <% if (product.stock && product.stock > 0) { %>
 
-        <div class="mb-3">
+          <!-- AVAILABLE SIZES -->
+          <% if (product.sizes && product.sizes.length > 0) { %>
 
-          <label class="form-label fw-bold">
-            Available Sizes
-          </label>
+            <div class="mb-3">
 
-          <select class="form-select product-size">
+              <label class="form-label fw-bold">
+                Available Sizes
+              </label>
 
-            <option value>Choose Size</option>
+              <select class="form-select product-size">
 
-            <% product.sizes.forEach(size => { %>
+                <option value="">Choose Size</option>
 
-            <option value="<%= size %>">
-              <%= size %>
-            </option>
+                <% product.sizes.forEach(size => { %>
 
-            <% }) %>
+                  <option value="<%= size %>">
+                    <%= size %>
+                  </option>
 
-          </select>
+                <% }) %>
 
-        </div>
+              </select>
+
+            </div>
+
+          <% } %>
+
+          <!-- AVAILABLE COLOURS -->
+          <% if (product.colors && product.colors.length > 0) { %>
+
+            <div class="mb-4">
+
+              <label class="form-label fw-bold">
+                Available Colours
+              </label>
+
+              <select class="form-select product-color">
+
+                <option value="">Choose Colour</option>
+
+                <% product.colors.forEach(color => { %>
+
+                  <option value="<%= color %>">
+                    <%= color %>
+                  </option>
+
+                <% }) %>
+
+              </select>
+
+            </div>
+
+          <% } %>
+
+          <!-- QUANTITY -->
+          <div class="mb-4">
+
+            <label class="form-label fw-bold">
+              Quantity
+            </label>
+
+            <input
+              type="number"
+              value="1"
+              min="1"
+              max="<%= product.stock %>"
+              class="form-control product-quantity"
+              style="max-width: 120px;">
+
+            <small class="text-muted">
+              Maximum available: <%= product.stock %>
+            </small>
+
+          </div>
+
+          <!-- ADD TO CART -->
+          <button class="btn btn-warning btn-lg add-to-cart"
+            data-id="<%= product._id %>"
+            data-name="<%= product.name %>"
+            data-price="<%= product.price %>"
+            data-image="<%= product.image %>"
+            data-stock="<%= product.stock %>">
+
+            <i class="fa-solid fa-cart-shopping me-2"></i>
+            Add to Cart
+
+          </button>
+
+        <% } else { %>
+
+          <button
+            class="btn btn-secondary btn-lg"
+            disabled>
+
+            <i class="fa-solid fa-ban me-2"></i>
+            Out of Stock
+
+          </button>
 
         <% } %>
-
-        <!--  AVAILABLE COLOURS -->
-        <% if (product.colors && product.colors.length > 0) { %>
-
-        <div class="mb-4">
-
-          <label class="form-label fw-bold">
-            Available Colours
-          </label>
-
-          <select class="form-select product-color">
-
-            <option value>Choose Colour</option>
-
-            <% product.colors.forEach(color => { %>
-
-            <option value="<%= color %>">
-              <%= color %>
-            </option>
-
-            <% }) %>
-
-          </select>
-
-        </div>
-
-        <% } %>
-
-        <!-- QUANTITY -->
-        <div class="mb-4">
-
-          <label class="form-label fw-bold">
-            Quantity
-          </label>
-
-          <input type="number"
-            value="1"
-            min="1"
-            class="form-control product-quantity"
-            style="max-width: 120px;">
-
-        </div>
-
-        <!--  ADD TO CART -->
-        <button class="btn btn-warning btn-lg add-to-cart"
-          data-id="<%= product._id %>"
-          data-name="<%= product.name %>"
-          data-price="<%= product.price %>"
-          data-image="<%= product.image %>">
-
-          <i class="fa-solid fa-cart-shopping me-2"></i>
-          Add to Cart
-
-        </button>
 
       </div>
 
@@ -177,17 +222,5 @@
 
   </div>
 </section>
-
-<script>
-  function changeProductImage(src) {
-
-    document.getElementById("mainProductImage").src = src;
-
-    document.querySelectorAll(".product-thumb")
-      .forEach(thumb => thumb.classList.remove("active-thumb"));
-
-    event.target.classList.add("active-thumb");
-  }
-</script>
 
 <%- include("partials/footer") %>

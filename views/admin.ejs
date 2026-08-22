@@ -206,7 +206,29 @@
 
           <div class="col-md-6">
             <label class="form-label">Price</label>
-            <input type="number" name="price" class="form-control" required>
+
+            <input
+              type="number"
+              name="price"
+              class="form-control"
+              min="0"
+              step="0.01"
+              required>
+          </div>
+
+          <!-- Stock Quantity -->
+          <div class="col-md-6">
+            <label class="form-label">
+              Stock Quantity
+            </label>
+
+            <input
+              type="number"
+              name="stock"
+              class="form-control"
+              min="0"
+              value="0"
+              required>
           </div>
 
           <div class="col-md-6">
@@ -232,7 +254,8 @@
           <div class="col-12">
             <label class="form-label">Description</label>
 
-            <textarea name="description"
+            <textarea
+              name="description"
               class="form-control"
               rows="3"></textarea>
           </div>
@@ -541,10 +564,10 @@
                     alt="<%= product.name %>"
                     class="rounded me-3"
                     style="
-                      width: 70px;
-                      height: 70px;
-                      object-fit: cover;
-                    ">
+                    width: 70px;
+                    height: 70px;
+                    object-fit: cover;
+                  ">
 
                   <div>
 
@@ -561,9 +584,69 @@
                 </div>
 
                 <!-- PRICE -->
-                <p class="fw-bold text-warning fs-5 mb-3">
-                  R<%= product.price %>.00
+                <p class="fw-bold text-warning fs-5 mb-2">
+                  R<%= Number(product.price).toFixed(2) %>
                 </p>
+
+                <!-- STOCK STATUS -->
+                <div class="mb-3">
+
+                  <% if (product.stock <= 0) { %>
+
+                  <span class="badge bg-danger">
+                    <i class="fa-solid fa-circle-xmark me-1"></i>
+                    Out of Stock
+                  </span>
+
+                  <% } else if (product.stock <= 5) { %>
+
+                  <span class="badge bg-warning text-dark">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                    Low Stock — <%= product.stock %> left
+                  </span>
+
+                  <% } else { %>
+
+                  <span class="badge bg-success">
+                    <i class="fa-solid fa-circle-check me-1"></i>
+                    In Stock — <%= product.stock %> left
+                  </span>
+
+                  <% } %>
+
+                </div>
+
+                <!-- UPDATE STOCK -->
+                <form
+                  action="/admin/update-stock/<%= product._id %>"
+                  method="POST"
+                  class="mb-3">
+
+                  <label class="form-label fw-semibold">
+                    Stock Quantity
+                  </label>
+
+                  <div class="input-group">
+
+                    <input
+                      type="number"
+                      name="stock"
+                      class="form-control"
+                      min="0"
+                      value="<%= product.stock ?? 0 %>"
+                      required>
+
+                    <button
+                      type="submit"
+                      class="btn btn-warning">
+
+                      <i class="fa-solid fa-floppy-disk"></i>
+
+                    </button>
+
+                  </div>
+
+                </form>
 
                 <!-- ACTIONS -->
                 <div class="mt-auto d-grid gap-2">

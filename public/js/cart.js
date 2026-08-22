@@ -37,17 +37,44 @@ function updateCartCount() {
 function addToCart(product) {
   const cart = getCart();
 
+  // Available stock from the product
+  const availableStock = Number(product.stock || 0);
+
+  // Stop if product is out of stock
+  if (availableStock <= 0) {
+    alert(`${product.name} is currently out of stock.`);
+    return;
+  }
+
   // Match same product + same size + same colour
   const existing = cart.find(
     (item) =>
       item.id === product.id &&
       item.size === product.size &&
-      item.color === product.color
+      item.color === product.color,
   );
 
   if (existing) {
-    existing.quantity += product.quantity;
+    const newQuantity = Number(existing.quantity) + Number(product.quantity);
+
+    // Prevent customer from exceeding stock
+    if (newQuantity > availableStock) {
+      alert(
+        `Sorry, only ${availableStock} ${product.name} item(s) are available in stock.`,
+      );
+      return;
+    }
+
+    existing.quantity = newQuantity;
   } else {
+    // Prevent first addition from exceeding stock
+    if (Number(product.quantity) > availableStock) {
+      alert(
+        `Sorry, only ${availableStock} ${product.name} item(s) are available in stock.`,
+      );
+      return;
+    }
+
     cart.push({
       ...product,
     });
@@ -58,7 +85,6 @@ function addToCart(product) {
 
   alert(`${product.name} added to cart!`);
 }
-
 // ===============================
 // REMOVE ITEM FROM CART
 // ===============================
@@ -114,8 +140,7 @@ function renderCartPage() {
 
   cartContainer.innerHTML = cart
     .map((item, index) => {
-      const itemTotal =
-        Number(item.price) * Number(item.quantity);
+      const itemTotal = Number(item.price) * Number(item.quantity);
 
       subtotal += itemTotal;
 
@@ -177,8 +202,7 @@ function renderCartPage() {
   document.getElementById("delivery-fee").textContent =
     `R${deliveryFee.toFixed(2)}`;
 
-  document.getElementById("cart-total").textContent =
-    `R${total.toFixed(2)}`;
+  document.getElementById("cart-total").textContent = `R${total.toFixed(2)}`;
 }
 
 // ===============================
@@ -186,8 +210,7 @@ function renderCartPage() {
 // ===============================
 
 function renderCheckoutPage() {
-  const container =
-    document.getElementById("checkout-items");
+  const container = document.getElementById("checkout-items");
 
   if (!container) return;
 
@@ -201,14 +224,11 @@ function renderCheckoutPage() {
       </div>
     `;
 
-    document.getElementById("checkout-subtotal").textContent =
-      "R0.00";
+    document.getElementById("checkout-subtotal").textContent = "R0.00";
 
-    document.getElementById("checkout-delivery").textContent =
-      "R0.00";
+    document.getElementById("checkout-delivery").textContent = "R0.00";
 
-    document.getElementById("checkout-total").textContent =
-      "R0.00";
+    document.getElementById("checkout-total").textContent = "R0.00";
 
     return;
   }
@@ -217,8 +237,7 @@ function renderCheckoutPage() {
 
   container.innerHTML = cart
     .map((item) => {
-      const itemTotal =
-        Number(item.price) * Number(item.quantity);
+      const itemTotal = Number(item.price) * Number(item.quantity);
 
       subtotal += itemTotal;
 
@@ -264,23 +283,17 @@ function renderCheckoutPage() {
 // ===============================
 
 document.addEventListener("DOMContentLoaded", () => {
-
   // Update badge on every page
   updateCartCount();
 
   // Add-to-cart buttons
   document.querySelectorAll(".add-to-cart").forEach((button) => {
-
     button.addEventListener("click", () => {
+      const sizeSelect = document.querySelector(".product-size");
 
-      const sizeSelect =
-        document.querySelector(".product-size");
+      const colorSelect = document.querySelector(".product-color");
 
-      const colorSelect =
-        document.querySelector(".product-color");
-
-      const quantityInput =
-        document.querySelector(".product-quantity");
+      const quantityInput = document.querySelector(".product-quantity");
 
       // Require size
       if (sizeSelect && !sizeSelect.value) {
@@ -295,7 +308,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const product = {
-
         id: button.dataset.id,
 
         name: button.dataset.name,
@@ -304,24 +316,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         image: button.dataset.image,
 
-        size: sizeSelect
-          ? sizeSelect.value
-          : null,
+        // Available stock
+        stock: Number(button.dataset.stock),
 
-        color: colorSelect
-          ? colorSelect.value
-          : null,
+        size: sizeSelect ? sizeSelect.value : null,
 
-        quantity: quantityInput
-          ? parseInt(quantityInput.value)
-          : 1,
+        color: colorSelect ? colorSelect.value : null,
 
+        quantity: quantityInput ? parseInt(quantityInput.value) : 1,
       };
 
       addToCart(product);
-
     });
-
   });
 
   // Render cart page
@@ -331,23 +337,17 @@ document.addEventListener("DOMContentLoaded", () => {
   renderCheckoutPage();
 
   // Clear cart button
-  const clearBtn =
-    document.getElementById("clear-cart");
+  const clearBtn = document.getElementById("clear-cart");
 
   if (clearBtn) {
-
     clearBtn.addEventListener("click", () => {
-
       localStorage.removeItem("cart");
 
       renderCartPage();
       renderCheckoutPage();
       updateCartCount();
-
     });
-
   }
-
 });
 
 // Make functions available globally

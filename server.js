@@ -95,6 +95,12 @@ app.get("/", async (req, res) => {
   }
 });
 
+app.get("/stores", async (req, res) => {
+  res.render("stores", {
+    search: "",
+  });
+});
+
 app.get("/shop", async (req, res) => {
   try {
     const products = await Product.find({
@@ -552,6 +558,9 @@ app.post(
 
         category: req.body.category,
 
+        // Stock quantity
+        stock: Math.max(0, Number(req.body.stock) || 0),
+
         // Cloudinary URL
         image: mainImage.path,
 
@@ -577,21 +586,66 @@ app.post(
         featured: req.body.featured === "true",
       });
 
-      console.log(" Product saved with Cloudinary images");
+      console.log("Product saved with Cloudinary images and stock");
 
       res.redirect("/admin");
     } catch (error) {
-      console.error(" Error saving product:", error);
+      console.error("Error saving product:", error);
 
       res.status(500).send("Error saving product");
     }
   },
 );
+
 // =====================================
 // CREATE ORDER — EFT ONLY
 // =====================================
 app.post("/api/orders", express.json(), async (req, res) => {
   try {
+    const items = req.body.items;
+
+    // Check that the order has items
+    if (!items || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Your cart is empty.",
+      });
+    }
+
+    // =====================================
+    // CHECK REAL STOCK IN MONGODB
+    // =====================================
+    for (const item of items) {
+      const product = await Product.findById(item.productId);
+
+      // Product no longer exists
+      if (!product) {
+        return res.status(400).json({
+          success: false,
+          message: `${item.name} is no longer available.`,
+        });
+      }
+
+      // Product is out of stock
+      if (product.stock <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: `${product.name} is out of stock.`,
+        });
+      }
+
+      // Customer wants more than available
+      if (Number(item.quantity) > product.stock) {
+        return res.status(400).json({
+          success: false,
+          message: `Sorry, only ${product.stock} ${product.name} item(s) are available.`,
+        });
+      }
+    }
+
+    // =====================================
+    // CREATE ORDER
+    // =====================================
     const order = await Order.create({
       customerName: req.body.customerName,
 
@@ -607,7 +661,7 @@ app.post("/api/orders", express.json(), async (req, res) => {
 
       postalCode: req.body.postalCode,
 
-      items: req.body.items,
+      items: items,
 
       subtotal: req.body.subtotal,
 
@@ -623,19 +677,18 @@ app.post("/api/orders", express.json(), async (req, res) => {
       status: "Pending",
     });
 
-    console.log(" EFT Order saved:", order._id);
+    console.log("EFT Order saved:", order._id);
 
     res.status(201).json({
       success: true,
-
       orderId: order._id,
     });
+
   } catch (error) {
     console.error("Error saving EFT order:", error);
 
     res.status(500).json({
       success: false,
-
       message: "Error saving order",
     });
   }
@@ -656,26 +709,84 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
         .send("Only EFT payments can be manually confirmed.");
     }
 
+    // Prevent stock from being deducted twice
+    if (order.paymentStatus === "Paid") {
+      return res.redirect("/admin");
+    }
+
+    // =====================================
+    // CHECK STOCK AGAIN BEFORE CONFIRMING
+    // =====================================
+    for (const item of order.items) {
+      const product = await Product.findById(item.productId);
+
+      if (!product) {
+        return res
+          .status(400)
+          .send(`Product "${item.name}" no longer exists.`);
+      }
+
+      if (product.stock < item.quantity) {
+        return res
+          .status(400)
+          .send(
+            `Cannot confirm payment. Only ${product.stock} "${product.name}" item(s) left in stock.`
+          );
+      }
+    }
+
+    // =====================================
+    // REDUCE PRODUCT STOCK
+    // =====================================
+    for (const item of order.items) {
+      const product = await Product.findById(item.productId);
+
+      product.stock -= Number(item.quantity);
+
+      await product.save();
+    }
+
+    // =====================================
+    // CONFIRM PAYMENT
+    // =====================================
     order.paymentStatus = "Paid";
 
     await order.save();
 
-    console.log(` EFT PAYMENT CONFIRMED — Order ${order._id}`);
+    console.log(`EFT PAYMENT CONFIRMED — Order ${order._id}`);
 
-    //  TEMPORARY EMAIL DEBUGGING
-    console.log(" About to send EFT confirmation email...");
+    // SEND EMAILS
+    console.log("About to send EFT confirmation email...");
 
     await sendOrderConfirmation(order);
     await sendAdminOrderNotification(order);
 
-    console.log(" EFT confirmation function finished.");
+    console.log("EFT confirmation function finished.");
 
     // Redirect back to admin
     res.redirect("/admin");
+
   } catch (error) {
-    console.error(" Error confirming EFT payment:", error);
+    console.error("Error confirming EFT payment:", error);
 
     res.status(500).send("Unable to confirm payment");
+  }
+});
+
+app.post("/admin/update-stock/:id", isAdmin, async (req, res) => {
+  try {
+    const stock = Math.max(0, Number(req.body.stock) || 0);
+
+    await Product.findByIdAndUpdate(
+      req.params.id,
+      { stock },
+      { runValidators: true }
+    );
+
+    res.redirect("/admin");
+  } catch (error) {
+    console.error("Error updating product stock:", error);
+    res.status(500).send("Error updating product stock");
   }
 });
 

@@ -26,66 +26,114 @@
 
       <% if (products.length > 0) { %>
 
-      <% products.forEach(product => { %>
+        <% products.forEach(product => { %>
 
-      <div class="col-md-6 col-lg-4 col-xl-3">
+          <div class="col-md-6 col-lg-4 col-xl-3">
 
-        <div class="featured-product-card h-100 d-flex flex-column">
+            <div class="featured-product-card h-100 d-flex flex-column">
 
-          <div class="featured-product-image">
-            <img src="<%= product.image %>"
-              alt="<%= product.name %>">
-          </div>
+              <div class="featured-product-image">
+                <img
+                  src="<%= product.image %>"
+                  alt="<%= product.name %>">
+              </div>
 
-          <div class="p-3 d-flex flex-column flex-grow-1">
+              <div class="p-3 d-flex flex-column flex-grow-1">
 
-            <p class="small text-uppercase text-secondary mb-1">
-              <%= product.category %>
-            </p>
+                <p class="small text-uppercase text-secondary mb-1">
+                  <%= product.category %>
+                </p>
 
-            <h5 class="fw-bold mb-2">
-              <%= product.name %>
-            </h5>
+                <h5 class="fw-bold mb-2">
+                  <%= product.name %>
+                </h5>
 
-            <p class="fw-bold text-warning fs-5 mb-3">
-              R<%= product.price %>.00
-            </p>
+                <p class="fw-bold text-warning fs-5 mb-2">
+                  R<%= Number(product.price).toFixed(2) %>
+                </p>
 
-            <!-- Push buttons to bottom -->
-            <div class="mt-auto d-grid gap-2">
+                <!-- STOCK STATUS -->
+                <div class="mb-3">
 
-              <a href="/product/<%= product._id %>"
-                class="btn btn-outline-dark">
-                View Product
-              </a>
+                  <% if (!product.stock || product.stock <= 0) { %>
 
-              <a href="/product/<%= product._id %>"
-                class="btn btn-warning">
+                    <span class="badge bg-danger">
+                      <i class="fa-solid fa-circle-xmark me-1"></i>
+                      Out of Stock
+                    </span>
 
-                <i class="fa-solid fa-shirt me-2"></i>
-                Select Size & Add to Cart
+                  <% } else if (product.stock <= 5) { %>
 
-              </a>
+                    <span class="badge bg-warning text-dark">
+                      <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                      Only <%= product.stock %> left
+                    </span>
+
+                  <% } else { %>
+
+                    <span class="badge bg-success">
+                      <i class="fa-solid fa-circle-check me-1"></i>
+                      In Stock — <%= product.stock %> left
+                    </span>
+
+                  <% } %>
+
+                </div>
+
+                <!-- Push buttons to bottom -->
+                <div class="mt-auto d-grid gap-2">
+
+                  <a
+                    href="/product/<%= product._id %>"
+                    class="btn btn-outline-dark">
+
+                    View Product
+
+                  </a>
+
+                  <% if (!product.stock || product.stock <= 0) { %>
+
+                    <button
+                      class="btn btn-secondary"
+                      disabled>
+
+                      <i class="fa-solid fa-ban me-2"></i>
+                      Out of Stock
+
+                    </button>
+
+                  <% } else { %>
+
+                    <a
+                      href="/product/<%= product._id %>"
+                      class="btn btn-warning">
+
+                      <i class="fa-solid fa-shirt me-2"></i>
+                      Select Size & Add to Cart
+
+                    </a>
+
+                  <% } %>
+
+                </div>
+
+              </div>
 
             </div>
 
           </div>
 
-        </div>
-
-      </div>
-
-      <% }) %>
+        <% }) %>
 
       <% } else { %>
 
-      <div class="col-12 text-center">
+        <div class="col-12 text-center">
 
-        <div class="alert alert-warning">
-          No clothing products available yet.
+          <div class="alert alert-warning">
+            No clothing products available yet.
+          </div>
+
         </div>
-
-      </div>
 
       <% } %>
 
