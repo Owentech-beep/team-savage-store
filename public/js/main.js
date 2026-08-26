@@ -1,10 +1,18 @@
 async function startCheckout() {
   const form = document.getElementById("checkout-form");
 
+  // =====================================
+  // VALIDATE CHECKOUT FORM
+  // =====================================
+
   if (!form.checkValidity()) {
     form.reportValidity();
     return;
   }
+
+  // =====================================
+  // GET CART
+  // =====================================
 
   const cart = JSON.parse(localStorage.getItem("cart")) || [];
 
@@ -13,44 +21,38 @@ async function startCheckout() {
     return;
   }
 
-  // ---------------------------------
-  // Customer information
-  // ---------------------------------
+  // =====================================
+  // GET CUSTOMER INFORMATION
+  // =====================================
 
   const formData = new FormData(form);
 
   const firstName = formData.get("firstName");
-
   const lastName = formData.get("lastName");
 
   const email = formData.get("email");
-
   const phone = formData.get("phone");
 
   const street = formData.get("address");
-
   const city = formData.get("city");
-
   const province = formData.get("province");
-
   const postalCode = formData.get("postalCode");
 
-  // ---------------------------------
-  // Calculate totals
-  // ---------------------------------
+  // =====================================
+  // CALCULATE TOTALS
+  // =====================================
 
-  const subtotal = cart.reduce(
-    (sum, item) => sum + Number(item.price) * Number(item.quantity),
-    0,
-  );
+  const subtotal = cart.reduce((sum, item) => {
+    return sum + Number(item.price) * Number(item.quantity);
+  }, 0);
 
   const deliveryFee = 100;
 
   const total = subtotal + deliveryFee;
 
-  // ---------------------------------
-  // Create EFT order
-  // ---------------------------------
+  // =====================================
+  // CREATE ORDER DATA
+  // =====================================
 
   const orderData = {
     customerName: `${firstName} ${lastName}`,
@@ -66,8 +68,13 @@ async function startCheckout() {
       postalCode,
     },
 
+    // =====================================
+    // ORDER ITEMS
+    // =====================================
+
     items: cart.map((item) => ({
-      productId: item.productId || item._id || item.id || "",
+      // Product MongoDB ID
+      productId: item.id,
 
       name: item.name,
 
@@ -75,6 +82,7 @@ async function startCheckout() {
 
       quantity: Number(item.quantity),
 
+      // Important for clothing stock
       size: item.size || "",
 
       color: item.color || "",
@@ -86,15 +94,18 @@ async function startCheckout() {
 
     total,
 
-    // EFT ONLY
+    // =====================================
+    // PAYMENT
+    // =====================================
+
     paymentMethod: "EFT",
 
     paymentStatus: "Pending",
   };
 
-  // ---------------------------------
-  // Save order
-  // ---------------------------------
+  // =====================================
+  // CREATE ORDER
+  // =====================================
 
   try {
     const response = await fetch("/api/orders", {
@@ -111,19 +122,20 @@ async function startCheckout() {
 
     if (!response.ok || !result.success) {
       alert(result.message || "Unable to create order.");
-
       return;
     }
 
-    // ---------------------------------
-    // Order created successfully
-    // ---------------------------------
+    // =====================================
+    // ORDER SUCCESS
+    // =====================================
 
     localStorage.removeItem("cart");
 
+    // Go to EFT payment page
     window.location.href = `/eft-payment/${result.orderId}`;
+
   } catch (error) {
-    console.error(" Checkout error:", error);
+    console.error("Checkout error:", error);
 
     alert("Something went wrong while creating your order.");
   }

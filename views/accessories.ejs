@@ -33,6 +33,7 @@
 
             <div class="featured-product-card h-100 d-flex flex-column">
 
+              <!-- PRODUCT IMAGE -->
               <div class="featured-product-image">
                 <img
                   src="<%= product.image %>"
@@ -41,14 +42,17 @@
 
               <div class="p-3 d-flex flex-column flex-grow-1">
 
+                <!-- CATEGORY -->
                 <p class="small text-uppercase text-secondary mb-1">
                   <%= product.category %>
                 </p>
 
+                <!-- PRODUCT NAME -->
                 <h5 class="fw-bold mb-2">
                   <%= product.name %>
                 </h5>
 
+                <!-- PRICE -->
                 <p class="fw-bold text-warning fs-5 mb-2">
                   R<%= Number(product.price).toFixed(2) %>
                 </p>
@@ -84,6 +88,7 @@
                 <!-- BUTTONS -->
                 <div class="mt-auto d-grid gap-2">
 
+                  <!-- VIEW PRODUCT -->
                   <a
                     href="/product/<%= product._id %>"
                     class="btn btn-outline-dark">
@@ -92,6 +97,7 @@
 
                   </a>
 
+                  <!-- OUT OF STOCK -->
                   <% if (!product.stock || product.stock <= 0) { %>
 
                     <button
@@ -103,20 +109,17 @@
 
                     </button>
 
+                  <!-- AVAILABLE -->
                   <% } else { %>
 
-                    <button
-                      class="btn btn-warning add-to-cart"
-                      data-id="<%= product._id %>"
-                      data-name="<%= product.name %>"
-                      data-price="<%= product.price %>"
-                      data-image="<%= product.image %>"
-                      data-stock="<%= product.stock %>">
+                    <a
+                      href="/product/<%= product._id %>"
+                      class="btn btn-warning">
 
                       <i class="fa-solid fa-cart-shopping me-2"></i>
-                      Add to Cart
+                      Select Options & Add to Cart
 
-                    </button>
+                    </a>
 
                   <% } %>
 

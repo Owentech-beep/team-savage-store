@@ -182,30 +182,67 @@
     <div class="card shadow-sm border-0 mb-5">
       <div class="card-body p-4">
 
-        <h4 class="fw-bold mb-4">Add New Product</h4>
+        <h4 class="fw-bold mb-4">
+          <i class="fa-solid fa-plus me-2 text-warning"></i>
+          Add New Product
+        </h4>
 
-        <form action="/admin/add-product"
+        <form
+          action="/admin/add-product"
           method="POST"
           enctype="multipart/form-data"
           class="row g-3">
 
+          <!-- PRODUCT NAME -->
           <div class="col-md-6">
-            <label class="form-label">Product Name</label>
-            <input type="text" name="name" class="form-control" required>
+
+            <label class="form-label fw-semibold">
+              Product Name
+            </label>
+
+            <input
+              type="text"
+              name="name"
+              class="form-control"
+              required>
+
           </div>
 
+          <!-- CATEGORY -->
           <div class="col-md-6">
-            <label class="form-label">Category</label>
 
-            <select name="category" class="form-select" required>
-              <option value>Select Category</option>
-              <option value="Clothing">Clothing</option>
-              <option value="Accessories">Accessories</option>
+            <label class="form-label fw-semibold">
+              Category
+            </label>
+
+            <select
+              name="category"
+              id="productCategory"
+              class="form-select"
+              required>
+
+              <option value>
+                Select Category
+              </option>
+
+              <option value="Clothing">
+                Clothing
+              </option>
+
+              <option value="Accessories">
+                Accessories
+              </option>
+
             </select>
+
           </div>
 
+          <!-- PRICE -->
           <div class="col-md-6">
-            <label class="form-label">Price</label>
+
+            <label class="form-label fw-semibold">
+              Price
+            </label>
 
             <input
               type="number"
@@ -214,99 +251,393 @@
               min="0"
               step="0.01"
               required>
+
           </div>
 
-          <!-- Stock Quantity -->
-          <div class="col-md-6">
-            <label class="form-label">
+          <!-- =====================================
+           ACCESSORY STOCK
+      ====================================== -->
+          <div
+            class="col-md-6"
+            id="generalStockContainer">
+
+            <label class="form-label fw-semibold">
               Stock Quantity
             </label>
 
             <input
               type="number"
               name="stock"
+              id="generalStock"
               class="form-control"
               min="0"
-              value="0"
-              required>
+              value="0">
+
+            <small class="text-muted">
+              Use this for accessories such as bags,
+              bottles and gym straps.
+            </small>
+
           </div>
 
-          <div class="col-md-6">
-            <label class="form-label">Main Product Image</label>
+          <!-- =====================================
+           CLOTHING SIZE STOCK
+      ====================================== -->
+          <div
+            class="col-12 d-none"
+            id="sizeStockContainer">
 
-            <input type="file"
+            <label class="form-label fw-semibold mb-3">
+              Clothing Size & Stock
+            </label>
+
+            <div class="row g-3">
+
+              <!-- S -->
+              <div class="col-6 col-md-3">
+
+                <div class="border rounded p-3">
+
+                  <label class="form-label fw-bold">
+                    Size S
+                  </label>
+
+                  <input
+                    type="number"
+                    name="sizeStock_S"
+                    class="form-control size-stock-input"
+                    min="0"
+                    value="0">
+
+                  <small class="text-muted">
+                    Quantity
+                  </small>
+
+                </div>
+
+              </div>
+
+              <!-- M -->
+              <div class="col-6 col-md-3">
+
+                <div class="border rounded p-3">
+
+                  <label class="form-label fw-bold">
+                    Size M
+                  </label>
+
+                  <input
+                    type="number"
+                    name="sizeStock_M"
+                    class="form-control size-stock-input"
+                    min="0"
+                    value="0">
+
+                  <small class="text-muted">
+                    Quantity
+                  </small>
+
+                </div>
+
+              </div>
+
+              <!-- L -->
+              <div class="col-6 col-md-3">
+
+                <div class="border rounded p-3">
+
+                  <label class="form-label fw-bold">
+                    Size L
+                  </label>
+
+                  <input
+                    type="number"
+                    name="sizeStock_L"
+                    class="form-control size-stock-input"
+                    min="0"
+                    value="0">
+
+                  <small class="text-muted">
+                    Quantity
+                  </small>
+
+                </div>
+
+              </div>
+
+              <!-- XL -->
+              <div class="col-6 col-md-3">
+
+                <div class="border rounded p-3">
+
+                  <label class="form-label fw-bold">
+                    Size XL
+                  </label>
+
+                  <input
+                    type="number"
+                    name="sizeStock_XL"
+                    class="form-control size-stock-input"
+                    min="0"
+                    value="0">
+
+                  <small class="text-muted">
+                    Quantity
+                  </small>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- STOCK PREVIEW -->
+            <div class="alert alert-light border mt-3 mb-0">
+
+              <i class="fa-solid fa-boxes-stacked me-2 text-warning"></i>
+
+              <strong>Total Clothing Stock:</strong>
+
+              <span id="totalSizeStock">
+                0
+              </span>
+
+              items
+
+            </div>
+
+          </div>
+
+          <!-- MAIN IMAGE -->
+          <div class="col-md-6">
+
+            <label class="form-label fw-semibold">
+              Main Product Image
+            </label>
+
+            <input
+              type="file"
               name="image"
               class="form-control"
               accept="image/*"
               required>
+
           </div>
 
+          <!-- GALLERY -->
           <div class="col-md-6">
-            <label class="form-label">Gallery Images (up to 3)</label>
 
-            <input type="file"
+            <label class="form-label fw-semibold">
+              Gallery Images (up to 3)
+            </label>
+
+            <input
+              type="file"
               name="gallery"
               class="form-control"
               accept="image/*"
               multiple>
+
           </div>
 
+          <!-- DESCRIPTION -->
           <div class="col-12">
-            <label class="form-label">Description</label>
+
+            <label class="form-label fw-semibold">
+              Description
+            </label>
 
             <textarea
               name="description"
               class="form-control"
               rows="3"></textarea>
+
           </div>
 
+          <!-- COLOURS -->
           <div class="col-md-6">
-            <label class="form-label">Available Colours</label>
 
-            <input type="text"
+            <label class="form-label fw-semibold">
+              Available Colours
+            </label>
+
+            <input
+              type="text"
               name="colors"
               class="form-control"
               placeholder="Black, White, Red">
+
+            <small class="text-muted">
+              Separate colours with commas.
+            </small>
+
           </div>
 
+          <!-- SIZES -->
           <div class="col-md-6">
-            <label class="form-label">Available Sizes</label>
 
-            <input type="text"
+            <label class="form-label fw-semibold">
+              Available Sizes
+            </label>
+
+            <input
+              type="text"
               name="sizes"
+              id="availableSizes"
               class="form-control"
               placeholder="S, M, L, XL">
+
+            <small class="text-muted">
+              Example: S, M, L, XL
+            </small>
+
           </div>
 
+          <!-- FEATURED -->
           <div class="col-12">
+
             <div class="form-check">
 
-              <input class="form-check-input"
+              <input
+                class="form-check-input"
                 type="checkbox"
                 name="featured"
                 value="true"
                 id="featuredProduct">
 
-              <label class="form-check-label" for="featuredProduct">
+              <label
+                class="form-check-label"
+                for="featuredProduct">
+
                 Show as Featured Product
+
               </label>
 
             </div>
+
           </div>
 
+          <!-- SUBMIT -->
           <div class="col-12">
-            <button class="btn btn-warning fw-semibold">
+
+            <button
+              type="submit"
+              class="btn btn-warning fw-semibold">
 
               <i class="fa-solid fa-plus me-2"></i>
+
               Add Product
 
             </button>
+
           </div>
 
         </form>
 
       </div>
     </div>
+
+    <!-- =====================================
+     CATEGORY / STOCK JAVASCRIPT
+===================================== -->
+    <script>
+
+  document.addEventListener("DOMContentLoaded", () => {
+
+    const category =
+      document.getElementById("productCategory");
+
+    const generalStockContainer =
+      document.getElementById("generalStockContainer");
+
+    const sizeStockContainer =
+      document.getElementById("sizeStockContainer");
+
+    const generalStock =
+      document.getElementById("generalStock");
+
+    const availableSizes =
+      document.getElementById("availableSizes");
+
+    const sizeInputs =
+      document.querySelectorAll(".size-stock-input");
+
+    const totalSizeStock =
+      document.getElementById("totalSizeStock");
+
+
+    // =====================================
+    // CATEGORY CHANGE
+    // =====================================
+
+    category.addEventListener("change", () => {
+
+      if (category.value === "Clothing") {
+
+        // Show size stock
+        sizeStockContainer.classList.remove("d-none");
+
+        // Hide general stock
+        generalStockContainer.classList.add("d-none");
+
+        // General stock isn't required for clothing
+        generalStock.value = 0;
+
+
+      } else {
+
+        // Hide size stock
+        sizeStockContainer.classList.add("d-none");
+
+        // Show general stock
+        generalStockContainer.classList.remove("d-none");
+
+        // Clear clothing sizes
+        availableSizes.value = "";
+
+        sizeInputs.forEach(input => {
+          input.value = 0;
+        });
+
+        totalSizeStock.textContent = "0";
+
+      }
+
+    });
+
+
+    // =====================================
+    // CALCULATE TOTAL SIZE STOCK
+    // =====================================
+
+    function calculateTotalStock() {
+
+      let total = 0;
+
+      sizeInputs.forEach(input => {
+
+        total += Number(input.value) || 0;
+
+      });
+
+      totalSizeStock.textContent = total;
+
+    }
+
+
+    sizeInputs.forEach(input => {
+
+      input.addEventListener(
+        "input",
+        calculateTotalStock
+      );
+
+    });
+
+
+  });
+
+</script>
 
     <!-- ========================================= -->
     <!-- CUSTOMER ORDERS -->
@@ -564,10 +895,10 @@
                     alt="<%= product.name %>"
                     class="rounded me-3"
                     style="
-                    width: 70px;
-                    height: 70px;
-                    object-fit: cover;
-                  ">
+                      width: 70px;
+                      height: 70px;
+                      object-fit: cover;
+                    ">
 
                   <div>
 
@@ -584,14 +915,87 @@
                 </div>
 
                 <!-- PRICE -->
-                <p class="fw-bold text-warning fs-5 mb-2">
+                <p class="fw-bold text-warning fs-5 mb-3">
                   R<%= Number(product.price).toFixed(2) %>
                 </p>
 
+                <!-- ========================================= -->
+                <!-- CLOTHING: SIZE-BASED STOCK -->
+                <!-- ========================================= -->
+
+                <% if (product.category === "Clothing") { %>
+
+                <form
+                  action="/admin/update-stock/<%= product._id %>"
+                  method="POST"
+                  class="mb-3">
+
+                  <label class="form-label fw-bold">
+                    <i class="fa-solid fa-shirt me-1"></i>
+                    Manage Size Stock
+                  </label>
+
+                  <% if (product.sizes && product.sizes.length > 0) { %>
+
+                  <div class="row g-2">
+
+                    <% product.sizes.forEach((sizeItem, index) => { %>
+
+                    <div class="col-6">
+
+                      <label class="form-label small mb-1">
+                        <%= sizeItem.size %>
+                      </label>
+
+                      <input
+                        type="hidden"
+                        name="sizes[<%= index %>][size]"
+                        value="<%= sizeItem.size %>">
+
+                      <input
+                        type="number"
+                        name="sizes[<%= index %>][stock]"
+                        class="form-control"
+                        min="0"
+                        value="<%= sizeItem.stock ?? 0 %>"
+                        required>
+
+                    </div>
+
+                    <% }) %>
+
+                  </div>
+
+                  <% } else { %>
+
+                  <div class="alert alert-warning py-2 mb-3">
+
+                    No sizes have been added for this clothing product.
+
+                  </div>
+
+                  <% } %>
+
+                  <button
+                    type="submit"
+                    class="btn btn-warning w-100 mt-3">
+
+                    <i class="fa-solid fa-floppy-disk me-2"></i>
+                    Save Size Stock
+
+                  </button>
+
+                </form>
+
+                <% } else { %>
+
+                <!-- ========================================= -->
+                <!-- ACCESSORIES: NORMAL STOCK -->
+                <!-- ========================================= -->
                 <!-- STOCK STATUS -->
                 <div class="mb-3">
 
-                  <% if (product.stock <= 0) { %>
+                  <% if ((product.stock ?? 0) <= 0) { %>
 
                   <span class="badge bg-danger">
                     <i class="fa-solid fa-circle-xmark me-1"></i>
@@ -616,11 +1020,76 @@
 
                 </div>
 
+                <!-- ========================================= -->
                 <!-- UPDATE STOCK -->
+                <!-- ========================================= -->
+
                 <form
                   action="/admin/update-stock/<%= product._id %>"
                   method="POST"
                   class="mb-3">
+
+                  <!-- CLOTHING STOCK BY SIZE -->
+                  <% if (product.category === "Clothing") { %>
+
+                  <label class="form-label fw-semibold">
+                    Stock by Size
+                  </label>
+
+                  <% if (product.sizes && product.sizes.length > 0) { %>
+
+                  <% product.sizes.forEach((sizeItem, index) => { %>
+
+                  <div class="input-group mb-2">
+
+                    <!-- SIZE -->
+                    <span class="input-group-text fw-bold">
+                      <%= sizeItem.size %>
+                    </span>
+
+                    <!-- SEND SIZE NAME -->
+                    <input
+                      type="hidden"
+                      name="sizes[<%= index %>][size]"
+                      value="<%= sizeItem.size %>">
+
+                    <!-- SIZE STOCK -->
+                    <input
+                      type="number"
+                      name="sizes[<%= index %>][stock]"
+                      class="form-control"
+                      min="0"
+                      value="<%= sizeItem.stock ?? 0 %>"
+                      required>
+
+                    <span class="input-group-text">
+                      left
+                    </span>
+
+                  </div>
+
+                  <% }) %>
+
+                  <% } else { %>
+
+                  <div class="alert alert-warning py-2">
+                    No sizes configured for this product.
+                  </div>
+
+                  <% } %>
+
+                  <!-- SAVE CLOTHING STOCK -->
+                  <button
+                    type="submit"
+                    class="btn btn-warning w-100 mt-2">
+
+                    <i class="fa-solid fa-floppy-disk me-2"></i>
+                    Save Size Stock
+
+                  </button>
+
+                  <!-- ACCESSORY STOCK -->
+                  <% } else { %>
 
                   <label class="form-label fw-semibold">
                     Stock Quantity
@@ -646,7 +1115,11 @@
 
                   </div>
 
+                  <% } %>
+
                 </form>
+
+                <% } %>
 
                 <!-- ACTIONS -->
                 <div class="mt-auto d-grid gap-2">

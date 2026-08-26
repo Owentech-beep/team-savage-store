@@ -437,14 +437,11 @@ app.get("/category/:name", async (req, res) => {
 });
 
 app.get("/contact", (req, res) => {
-
-  const success =
-    req.query.success === "true";
+  const success = req.query.success === "true";
 
   res.render("contact", {
     success,
   });
-
 });
 
 app.post("/contact", async (req, res) => {
@@ -551,6 +548,37 @@ app.post(
 
       const galleryImages = req.files?.gallery || [];
 
+      // =====================================
+      // BUILD SIZE STOCK FOR CLOTHING
+      // =====================================
+
+      let sizes = [];
+
+      if (req.body.category === "Clothing") {
+        sizes = [
+          {
+            size: "S",
+            stock: Math.max(0, Number(req.body.sizeStock_S) || 0),
+          },
+          {
+            size: "M",
+            stock: Math.max(0, Number(req.body.sizeStock_M) || 0),
+          },
+          {
+            size: "L",
+            stock: Math.max(0, Number(req.body.sizeStock_L) || 0),
+          },
+          {
+            size: "XL",
+            stock: Math.max(0, Number(req.body.sizeStock_XL) || 0),
+          },
+        ];
+      }
+
+      // =====================================
+      // CREATE PRODUCT
+      // =====================================
+
       await Product.create({
         name: req.body.name,
 
@@ -558,13 +586,23 @@ app.post(
 
         category: req.body.category,
 
-        // Stock quantity
-        stock: Math.max(0, Number(req.body.stock) || 0),
+        // =====================================
+        // ACCESSORIES USE GENERAL STOCK
+        // =====================================
+        stock:
+          req.body.category === "Accessories"
+            ? Math.max(0, Number(req.body.stock) || 0)
+            : 0,
 
-        // Cloudinary URL
+        // =====================================
+        // CLOTHING USES SIZE STOCK
+        // =====================================
+        sizes,
+
+        // Cloudinary main image
         image: mainImage.path,
 
-        // Cloudinary gallery URLs
+        // Cloudinary gallery images
         gallery: galleryImages.map((file) => file.path),
 
         description: req.body.description,
@@ -576,17 +614,10 @@ app.post(
               .filter(Boolean)
           : [],
 
-        sizes: req.body.sizes
-          ? req.body.sizes
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : [],
-
         featured: req.body.featured === "true",
       });
 
-      console.log("Product saved with Cloudinary images and stock");
+      console.log("Product saved with stock successfully");
 
       res.redirect("/admin");
     } catch (error) {
@@ -604,8 +635,10 @@ app.post("/api/orders", express.json(), async (req, res) => {
   try {
     const items = req.body.items;
 
-    // Check that the order has items
-    if (!items || items.length === 0) {
+    // =====================================
+    // CHECK THAT CART HAS ITEMS
+    // =====================================
+    if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Your cart is empty.",
@@ -613,8 +646,11 @@ app.post("/api/orders", express.json(), async (req, res) => {
     }
 
     // =====================================
-    // CHECK REAL STOCK IN MONGODB
+    // BUILD VERIFIED ORDER ITEMS
     // =====================================
+    const verifiedItems = [];
+    let subtotal = 0;
+
     for (const item of items) {
       const product = await Product.findById(item.productId);
 
@@ -626,25 +662,96 @@ app.post("/api/orders", express.json(), async (req, res) => {
         });
       }
 
-      // Product is out of stock
-      if (product.stock <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: `${product.name} is out of stock.`,
-        });
+      const quantity = Math.max(1, Number(item.quantity) || 1);
+
+      // =====================================
+      // CLOTHING — CHECK SELECTED SIZE STOCK
+      // =====================================
+      if (product.category === "Clothing") {
+        if (!item.size) {
+          return res.status(400).json({
+            success: false,
+            message: `Please select a size for ${product.name}.`,
+          });
+        }
+
+        const selectedSize = product.sizes.find(
+          (sizeItem) =>
+            sizeItem.size.toLowerCase() === item.size.toLowerCase(),
+        );
+
+        if (!selectedSize) {
+          return res.status(400).json({
+            success: false,
+            message: `${item.size} is not available for ${product.name}.`,
+          });
+        }
+
+        if (selectedSize.stock <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: `${product.name} in size ${selectedSize.size} is out of stock.`,
+          });
+        }
+
+        if (quantity > selectedSize.stock) {
+          return res.status(400).json({
+            success: false,
+            message: `Sorry, only ${selectedSize.stock} ${product.name} item(s) in size ${selectedSize.size} are available.`,
+          });
+        }
       }
 
-      // Customer wants more than available
-      if (Number(item.quantity) > product.stock) {
-        return res.status(400).json({
-          success: false,
-          message: `Sorry, only ${product.stock} ${product.name} item(s) are available.`,
-        });
+      // =====================================
+      // ACCESSORIES — CHECK NORMAL STOCK
+      // =====================================
+      else {
+        if (product.stock <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: `${product.name} is out of stock.`,
+          });
+        }
+
+        if (quantity > product.stock) {
+          return res.status(400).json({
+            success: false,
+            message: `Sorry, only ${product.stock} ${product.name} item(s) are available.`,
+          });
+        }
       }
+
+      // =====================================
+      // USE REAL PRODUCT PRICE FROM DATABASE
+      // =====================================
+      const realPrice = Number(product.price);
+
+      subtotal += realPrice * quantity;
+
+      verifiedItems.push({
+        productId: product._id,
+
+        name: product.name,
+
+        price: realPrice,
+
+        quantity,
+
+        size: item.size || "",
+
+        color: item.color || "",
+      });
     }
 
     // =====================================
-    // CREATE ORDER
+    // CALCULATE TOTALS ON SERVER
+    // =====================================
+    const deliveryFee = subtotal > 0 ? 100 : 0;
+
+    const total = subtotal + deliveryFee;
+
+    // =====================================
+    // CREATE EFT ORDER
     // =====================================
     const order = await Order.create({
       customerName: req.body.customerName,
@@ -655,21 +762,14 @@ app.post("/api/orders", express.json(), async (req, res) => {
 
       address: req.body.address,
 
-      city: req.body.city,
+      items: verifiedItems,
 
-      province: req.body.province,
+      subtotal,
 
-      postalCode: req.body.postalCode,
+      deliveryFee,
 
-      items: items,
+      total,
 
-      subtotal: req.body.subtotal,
-
-      deliveryFee: req.body.deliveryFee,
-
-      total: req.body.total,
-
-      // EFT ONLY
       paymentMethod: "EFT",
 
       paymentStatus: "Pending",
@@ -683,7 +783,6 @@ app.post("/api/orders", express.json(), async (req, res) => {
       success: true,
       orderId: order._id,
     });
-
   } catch (error) {
     console.error("Error saving EFT order:", error);
 
@@ -702,14 +801,20 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
       return res.status(404).send("Order not found");
     }
 
-    // Only allow manual payment confirmation for EFT
+    // =====================================
+    // ONLY ALLOW EFT PAYMENTS
+    // =====================================
+
     if (order.paymentMethod !== "EFT") {
       return res
         .status(400)
         .send("Only EFT payments can be manually confirmed.");
     }
 
-    // Prevent stock from being deducted twice
+    // =====================================
+    // PREVENT STOCK FROM BEING DEDUCTED TWICE
+    // =====================================
+
     if (order.paymentStatus === "Paid") {
       return res.redirect("/admin");
     }
@@ -717,31 +822,81 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
     // =====================================
     // CHECK STOCK AGAIN BEFORE CONFIRMING
     // =====================================
+
     for (const item of order.items) {
       const product = await Product.findById(item.productId);
 
       if (!product) {
-        return res
-          .status(400)
-          .send(`Product "${item.name}" no longer exists.`);
+        return res.status(400).send(
+          `Product "${item.name}" no longer exists.`,
+        );
       }
 
-      if (product.stock < item.quantity) {
-        return res
-          .status(400)
-          .send(
-            `Cannot confirm payment. Only ${product.stock} "${product.name}" item(s) left in stock.`
+      // =====================================
+      // CLOTHING — CHECK SELECTED SIZE STOCK
+      // =====================================
+
+      if (product.category === "Clothing") {
+        const selectedSize = product.sizes.find(
+          (sizeItem) =>
+            sizeItem.size === item.size,
+        );
+
+        // Size no longer exists
+        if (!selectedSize) {
+          return res.status(400).send(
+            `Size "${item.size}" is no longer available for "${product.name}".`,
           );
+        }
+
+        // Not enough stock for selected size
+        if (selectedSize.stock < Number(item.quantity)) {
+          return res.status(400).send(
+            `Cannot confirm payment. Only ${selectedSize.stock} "${product.name}" item(s) in size ${item.size} left in stock.`,
+          );
+        }
+      }
+
+      // =====================================
+      // ACCESSORIES — CHECK NORMAL STOCK
+      // =====================================
+
+      else {
+        if (product.stock < Number(item.quantity)) {
+          return res.status(400).send(
+            `Cannot confirm payment. Only ${product.stock} "${product.name}" item(s) left in stock.`,
+          );
+        }
       }
     }
 
     // =====================================
     // REDUCE PRODUCT STOCK
     // =====================================
+
     for (const item of order.items) {
       const product = await Product.findById(item.productId);
 
-      product.stock -= Number(item.quantity);
+      // =====================================
+      // CLOTHING — REDUCE SELECTED SIZE STOCK
+      // =====================================
+
+      if (product.category === "Clothing") {
+        const selectedSize = product.sizes.find(
+          (sizeItem) =>
+            sizeItem.size === item.size,
+        );
+
+        selectedSize.stock -= Number(item.quantity);
+      }
+
+      // =====================================
+      // ACCESSORIES — REDUCE NORMAL STOCK
+      // =====================================
+
+      else {
+        product.stock -= Number(item.quantity);
+      }
 
       await product.save();
     }
@@ -749,43 +904,83 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
     // =====================================
     // CONFIRM PAYMENT
     // =====================================
+
     order.paymentStatus = "Paid";
 
     await order.save();
 
-    console.log(`EFT PAYMENT CONFIRMED — Order ${order._id}`);
+    console.log(
+      `EFT PAYMENT CONFIRMED — Order ${order._id}`,
+    );
 
+    // =====================================
     // SEND EMAILS
-    console.log("About to send EFT confirmation email...");
+    // =====================================
+
+    console.log(
+      "About to send EFT confirmation email...",
+    );
 
     await sendOrderConfirmation(order);
+
     await sendAdminOrderNotification(order);
 
-    console.log("EFT confirmation function finished.");
+    console.log(
+      "EFT confirmation function finished.",
+    );
 
     // Redirect back to admin
     res.redirect("/admin");
 
   } catch (error) {
-    console.error("Error confirming EFT payment:", error);
 
-    res.status(500).send("Unable to confirm payment");
+    console.error(
+      "Error confirming EFT payment:",
+      error,
+    );
+
+    res.status(500).send(
+      "Unable to confirm payment",
+    );
+
   }
 });
 
 app.post("/admin/update-stock/:id", isAdmin, async (req, res) => {
   try {
-    const stock = Math.max(0, Number(req.body.stock) || 0);
+    const product = await Product.findById(req.params.id);
 
-    await Product.findByIdAndUpdate(
-      req.params.id,
-      { stock },
-      { runValidators: true }
-    );
+    if (!product) {
+      return res.status(404).send("Product not found");
+    }
+
+    // =====================================
+    // CLOTHING — UPDATE INDIVIDUAL SIZE STOCK
+    // =====================================
+    if (product.category === "Clothing") {
+      const sizes = req.body.sizes || [];
+
+      product.sizes = sizes.map((sizeItem) => ({
+        size: sizeItem.size,
+        stock: Math.max(0, Number(sizeItem.stock) || 0),
+      }));
+    }
+
+    // =====================================
+    // ACCESSORIES — UPDATE NORMAL STOCK
+    // =====================================
+    else {
+      product.stock = Math.max(0, Number(req.body.stock) || 0);
+    }
+
+    await product.save();
+
+    console.log(`Stock updated for product: ${product.name}`);
 
     res.redirect("/admin");
   } catch (error) {
     console.error("Error updating product stock:", error);
+
     res.status(500).send("Error updating product stock");
   }
 });
@@ -826,29 +1021,10 @@ app.post("/admin/reset-store", isAdmin, async (req, res) => {
   }
 });
 
-app.post("/api/orders", express.json(), async (req, res) => {
-  try {
-    const order = await Order.create(req.body);
-
-    console.log(" Order saved:", order._id);
-
-    res.status(201).json({
-      success: true,
-      orderId: order._id,
-    });
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      success: false,
-      message: "Error saving order",
-    });
-  }
-});
-
 // ===============================
 // LOGIN PAGE
 // ===============================
+
 app.get("/login", (req, res) => {
   res.render("login", { error: null });
 });
@@ -856,15 +1032,29 @@ app.get("/login", (req, res) => {
 // ===============================
 // LOGIN HANDLER
 // ===============================
-const adminEmail = "teamsavage.online@gmail.com";
 
-// Create a hashed password once
-const adminPasswordHash = await bcrypt.hash("Meathotmail789", 10);
+const adminEmail = process.env.ADMIN_EMAIL;
+const adminPassword = process.env.ADMIN_PASSWORD;
+
+if (!adminEmail || !adminPassword) {
+  throw new Error(
+    "ADMIN_EMAIL or ADMIN_PASSWORD is missing from the environment variables.",
+  );
+}
+
+// Create password hash when server starts
+const adminPasswordHash = await bcrypt.hash(
+  adminPassword,
+  10,
+);
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  const validPassword = await bcrypt.compare(password, adminPasswordHash);
+  const validPassword = await bcrypt.compare(
+    password,
+    adminPasswordHash,
+  );
 
   if (email === adminEmail && validPassword) {
     req.session.isAdmin = true;
@@ -880,6 +1070,7 @@ app.post("/login", async (req, res) => {
 // ===============================
 // LOGOUT
 // ===============================
+
 app.get("/logout", (req, res) => {
   req.session.destroy(() => {
     res.redirect("/");

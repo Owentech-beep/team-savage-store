@@ -1,15 +1,42 @@
 <%- include("partials/header") %>
 <%- include("partials/navbar") %>
 
+<%
+  const hasSizeStock =
+    product.sizes &&
+    product.sizes.length > 0 &&
+    typeof product.sizes[0] === "object";
+
+  const totalSizeStock = hasSizeStock
+    ? product.sizes.reduce(
+        (total, item) => total + Number(item.stock || 0),
+        0
+      )
+    : 0;
+
+  const availableSizes = hasSizeStock
+    ? product.sizes.filter(
+        item => Number(item.stock || 0) > 0
+      )
+    : [];
+
+  const productInStock = hasSizeStock
+    ? totalSizeStock > 0
+    : Number(product.stock || 0) > 0;
+%>
+
 <section class="product-details-page py-5 bg-white text-dark">
   <div class="container">
 
     <div class="row g-5">
 
-      <!-- Product Image Carousel -->
+      <!-- =====================================
+           PRODUCT IMAGE CAROUSEL
+      ====================================== -->
       <div class="col-lg-6">
 
-        <div id="productCarousel"
+        <div
+          id="productCarousel"
           class="carousel slide"
           data-bs-ride="carousel">
 
@@ -18,7 +45,8 @@
             <!-- MAIN PRODUCT IMAGE -->
             <div class="carousel-item active">
 
-              <img src="<%= product.image %>"
+              <img
+                src="<%= product.image %>"
                 class="d-block w-100 product-carousel-image"
                 alt="<%= product.name %>">
 
@@ -31,7 +59,8 @@
 
                 <div class="carousel-item">
 
-                  <img src="<%= image %>"
+                  <img
+                    src="<%= image %>"
                     class="d-block w-100 product-carousel-image"
                     alt="<%= product.name %> image <%= index + 2 %>">
 
@@ -44,24 +73,32 @@
           </div>
 
           <!-- PREVIOUS BUTTON -->
-          <button class="carousel-control-prev"
+          <button
+            class="carousel-control-prev"
             type="button"
             data-bs-target="#productCarousel"
             data-bs-slide="prev">
 
             <span class="carousel-control-prev-icon"></span>
-            <span class="visually-hidden">Previous</span>
+
+            <span class="visually-hidden">
+              Previous
+            </span>
 
           </button>
 
           <!-- NEXT BUTTON -->
-          <button class="carousel-control-next"
+          <button
+            class="carousel-control-next"
             type="button"
             data-bs-target="#productCarousel"
             data-bs-slide="next">
 
             <span class="carousel-control-next-icon"></span>
-            <span class="visually-hidden">Next</span>
+
+            <span class="visually-hidden">
+              Next
+            </span>
 
           </button>
 
@@ -69,7 +106,10 @@
 
       </div>
 
-      <!-- PRODUCT INFORMATION -->
+
+      <!-- =====================================
+           PRODUCT INFORMATION
+      ====================================== -->
       <div class="col-lg-6 product-info">
 
         <h1 class="fw-bold mb-3">
@@ -80,58 +120,116 @@
           R<%= Number(product.price).toFixed(2) %>
         </p>
 
-        <!-- STOCK STATUS -->
+
+        <!-- =====================================
+             OVERALL STOCK STATUS
+        ====================================== -->
         <div class="mb-3">
 
-          <% if (!product.stock || product.stock <= 0) { %>
+          <% if (!productInStock) { %>
 
             <span class="badge bg-danger fs-6">
+
               <i class="fa-solid fa-circle-xmark me-1"></i>
+
               Out of Stock
+
             </span>
 
-          <% } else if (product.stock <= 5) { %>
+          <% } else if (hasSizeStock) { %>
+
+            <span class="badge bg-success fs-6">
+
+              <i class="fa-solid fa-circle-check me-1"></i>
+
+              <%= availableSizes.length %>
+              size<%= availableSizes.length !== 1 ? "s" : "" %>
+              available
+
+            </span>
+
+          <% } else if (Number(product.stock) <= 5) { %>
 
             <span class="badge bg-warning text-dark fs-6">
+
               <i class="fa-solid fa-triangle-exclamation me-1"></i>
+
               Only <%= product.stock %> left
+
             </span>
 
           <% } else { %>
 
             <span class="badge bg-success fs-6">
+
               <i class="fa-solid fa-circle-check me-1"></i>
+
               In Stock — <%= product.stock %> left
+
             </span>
 
           <% } %>
 
         </div>
 
+
+        <!-- DESCRIPTION -->
         <p class="text-muted mb-4">
           <%= product.description %>
         </p>
 
-        <!-- Only show purchase options when in stock -->
-        <% if (product.stock && product.stock > 0) { %>
 
-          <!-- AVAILABLE SIZES -->
-          <% if (product.sizes && product.sizes.length > 0) { %>
+        <!-- =====================================
+             PURCHASE OPTIONS
+        ====================================== -->
+        <% if (productInStock) { %>
+
+
+          <!-- =====================================
+               CLOTHING SIZE SELECTION
+          ====================================== -->
+          <% if (hasSizeStock) { %>
 
             <div class="mb-3">
 
               <label class="form-label fw-bold">
-                Available Sizes
+                Select Size
               </label>
 
-              <select class="form-select product-size">
+              <select
+                class="form-select product-size"
+                id="productSize">
 
-                <option value="">Choose Size</option>
+                <option value="">
+                  Choose Size
+                </option>
 
-                <% product.sizes.forEach(size => { %>
 
-                  <option value="<%= size %>">
-                    <%= size %>
+                <% product.sizes.forEach(item => { %>
+
+                  <% const sizeStock = Number(item.stock || 0); %>
+
+                  <option
+                    value="<%= item.size %>"
+                    data-stock="<%= sizeStock %>"
+                    <%= sizeStock <= 0 ? "disabled" : "" %>>
+
+                    <%= item.size %>
+
+                    <% if (sizeStock <= 0) { %>
+
+                      — Out of Stock
+
+                    <% } else if (sizeStock <= 5) { %>
+
+                      — <%= sizeStock %> left
+
+                    <% } else { %>
+
+                      — In Stock
+
+                    <% } %>
+
                   </option>
 
                 <% }) %>
@@ -140,9 +238,24 @@
 
             </div>
 
+
+            <!-- SELECTED SIZE STOCK MESSAGE -->
+            <div
+              id="sizeStockMessage"
+              class="mb-3">
+
+              <small class="text-muted">
+                Select a size to check availability.
+              </small>
+
+            </div>
+
           <% } %>
 
-          <!-- AVAILABLE COLOURS -->
+
+          <!-- =====================================
+               COLOUR SELECTION
+          ====================================== -->
           <% if (product.colors && product.colors.length > 0) { %>
 
             <div class="mb-4">
@@ -153,7 +266,9 @@
 
               <select class="form-select product-color">
 
-                <option value="">Choose Colour</option>
+                <option value="">
+                  Choose Colour
+                </option>
 
                 <% product.colors.forEach(color => { %>
 
@@ -169,7 +284,10 @@
 
           <% } %>
 
-          <!-- QUANTITY -->
+
+          <!-- =====================================
+               QUANTITY
+          ====================================== -->
           <div class="mb-4">
 
             <label class="form-label fw-bold">
@@ -180,39 +298,64 @@
               type="number"
               value="1"
               min="1"
-              max="<%= product.stock %>"
+              max="<%= hasSizeStock ? 1 : product.stock %>"
               class="form-control product-quantity"
               style="max-width: 120px;">
 
-            <small class="text-muted">
-              Maximum available: <%= product.stock %>
+            <small
+              id="quantityMessage"
+              class="text-muted">
+
+              <% if (hasSizeStock) { %>
+
+                Select a size first.
+
+              <% } else { %>
+
+                Maximum available: <%= product.stock %>
+
+              <% } %>
+
             </small>
 
           </div>
 
-          <!-- ADD TO CART -->
-          <button class="btn btn-warning btn-lg add-to-cart"
+
+          <!-- =====================================
+               ADD TO CART
+          ====================================== -->
+          <button
+            class="btn btn-warning btn-lg add-to-cart"
             data-id="<%= product._id %>"
             data-name="<%= product.name %>"
             data-price="<%= product.price %>"
             data-image="<%= product.image %>"
-            data-stock="<%= product.stock %>">
+            data-stock="<%= hasSizeStock ? totalSizeStock : product.stock %>"
+            <%= hasSizeStock ? "disabled" : "" %>>
 
             <i class="fa-solid fa-cart-shopping me-2"></i>
+
             Add to Cart
 
           </button>
 
+
         <% } else { %>
 
+
+          <!-- =====================================
+               OUT OF STOCK
+          ====================================== -->
           <button
             class="btn btn-secondary btn-lg"
             disabled>
 
             <i class="fa-solid fa-ban me-2"></i>
+
             Out of Stock
 
           </button>
+
 
         <% } %>
 
@@ -222,5 +365,160 @@
 
   </div>
 </section>
+
+
+<!-- =====================================
+     SIZE STOCK JAVASCRIPT
+===================================== -->
+<script>
+
+  document.addEventListener("DOMContentLoaded", () => {
+
+    const sizeSelect =
+      document.querySelector(".product-size");
+
+    const quantityInput =
+      document.querySelector(".product-quantity");
+
+    const stockMessage =
+      document.getElementById("sizeStockMessage");
+
+    const quantityMessage =
+      document.getElementById("quantityMessage");
+
+    const addToCartButton =
+      document.querySelector(".add-to-cart");
+
+
+    if (!sizeSelect) return;
+
+
+    sizeSelect.addEventListener("change", () => {
+
+      const selectedOption =
+        sizeSelect.options[sizeSelect.selectedIndex];
+
+
+      const selectedStock =
+        Number(
+          selectedOption.dataset.stock || 0
+        );
+
+
+      // No size selected
+      if (!sizeSelect.value) {
+
+        quantityInput.value = 1;
+        quantityInput.max = 1;
+
+        stockMessage.innerHTML = `
+          <small class="text-muted">
+            Select a size to check availability.
+          </small>
+        `;
+
+        quantityMessage.textContent =
+          "Select a size first.";
+
+        addToCartButton.disabled = true;
+
+        return;
+
+      }
+
+
+      // Selected size is out of stock
+      if (selectedStock <= 0) {
+
+        quantityInput.value = 1;
+        quantityInput.max = 1;
+
+        stockMessage.innerHTML = `
+          <span class="badge bg-danger">
+            Out of Stock
+          </span>
+        `;
+
+        quantityMessage.textContent =
+          "This size is currently unavailable.";
+
+        addToCartButton.disabled = true;
+
+        return;
+
+      }
+
+
+      // Update quantity maximum
+      quantityInput.max = selectedStock;
+
+
+      if (Number(quantityInput.value) > selectedStock) {
+
+        quantityInput.value = selectedStock;
+
+      }
+
+
+      // Stock message
+      if (selectedStock <= 5) {
+
+        stockMessage.innerHTML = `
+          <span class="badge bg-warning text-dark">
+            Only ${selectedStock} left in this size
+          </span>
+        `;
+
+      } else {
+
+        stockMessage.innerHTML = `
+          <span class="badge bg-success">
+            In Stock — ${selectedStock} available
+          </span>
+        `;
+
+      }
+
+
+      quantityMessage.textContent =
+        `Maximum available: ${selectedStock}`;
+
+
+      // Enable Add to Cart
+      addToCartButton.disabled = false;
+
+    });
+
+
+    // Prevent entering more than available
+    quantityInput.addEventListener("input", () => {
+
+      const max =
+        Number(quantityInput.max);
+
+
+      if (
+        Number(quantityInput.value) > max
+      ) {
+
+        quantityInput.value = max;
+
+      }
+
+
+      if (
+        Number(quantityInput.value) < 1
+      ) {
+
+        quantityInput.value = 1;
+
+      }
+
+    });
+
+  });
+
+</script>
+
 
 <%- include("partials/footer") %>

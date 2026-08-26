@@ -83,7 +83,7 @@ export async function sendOrderConfirmation(order) {
           ">
 
             <h2 style="color: #f0ad00;">
-              🔥 TEAM SAVAGE
+               TEAM SAVAGE
             </h2>
 
             <h1>
@@ -193,7 +193,7 @@ export async function sendAdminOrderNotification(order) {
         to: [process.env.EMAIL_USER],
 
         subject:
-          `🔥 NEW PAID ORDER #${orderNumber}`,
+          ` NEW PAID ORDER #${orderNumber}`,
 
         html: `
 
@@ -205,7 +205,7 @@ export async function sendAdminOrderNotification(order) {
           ">
 
             <h2 style="color: #f0ad00;">
-              🔥 TEAM SAVAGE
+               TEAM SAVAGE
             </h2>
 
             <h1>
@@ -218,7 +218,7 @@ export async function sendAdminOrderNotification(order) {
 
             <hr>
 
-            <h2>👤 Customer Details</h2>
+            <h2> Customer Details</h2>
 
             <p>
               <strong>Name:</strong>
@@ -237,7 +237,7 @@ export async function sendAdminOrderNotification(order) {
 
             <hr>
 
-            <h2>📍 Delivery Address</h2>
+            <h2> Delivery Address</h2>
 
             <p>
               <strong>Street:</strong>
@@ -261,7 +261,7 @@ export async function sendAdminOrderNotification(order) {
 
             <hr>
 
-            <h2>🛍️ Order Details</h2>
+            <h2> Order Details</h2>
 
             <p>
               <strong>Order Number:</strong>
@@ -325,7 +325,7 @@ export async function sendAdminOrderNotification(order) {
 
             <hr>
 
-            <h2>💰 Payment Summary</h2>
+            <h2> Payment Summary</h2>
 
             <p>
               <strong>Subtotal:</strong>

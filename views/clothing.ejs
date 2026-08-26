@@ -28,6 +28,16 @@
 
         <% products.forEach(product => { %>
 
+          <% 
+            const sizes = product.sizes || [];
+
+            const totalStock = sizes.reduce(
+              (total, sizeItem) =>
+                total + (Number(sizeItem.stock) || 0),
+              0
+            );
+          %>
+
           <div class="col-md-6 col-lg-4 col-xl-3">
 
             <div class="featured-product-card h-100 d-flex flex-column">
@@ -52,29 +62,45 @@
                   R<%= Number(product.price).toFixed(2) %>
                 </p>
 
-                <!-- STOCK STATUS -->
+                <!-- SIZE STOCK STATUS -->
                 <div class="mb-3">
 
-                  <% if (!product.stock || product.stock <= 0) { %>
+                  <% if (totalStock <= 0) { %>
 
                     <span class="badge bg-danger">
                       <i class="fa-solid fa-circle-xmark me-1"></i>
                       Out of Stock
                     </span>
 
-                  <% } else if (product.stock <= 5) { %>
-
-                    <span class="badge bg-warning text-dark">
-                      <i class="fa-solid fa-triangle-exclamation me-1"></i>
-                      Only <%= product.stock %> left
-                    </span>
-
                   <% } else { %>
 
-                    <span class="badge bg-success">
-                      <i class="fa-solid fa-circle-check me-1"></i>
-                      In Stock — <%= product.stock %> left
-                    </span>
+                    <div class="d-flex flex-wrap gap-2">
+
+                      <% sizes.forEach(sizeItem => { %>
+
+                        <% if (Number(sizeItem.stock) <= 0) { %>
+
+                          <span class="badge bg-danger">
+                            <%= sizeItem.size %> — Out of Stock
+                          </span>
+
+                        <% } else if (Number(sizeItem.stock) <= 5) { %>
+
+                          <span class="badge bg-warning text-dark">
+                            <%= sizeItem.size %> — <%= sizeItem.stock %> left
+                          </span>
+
+                        <% } else { %>
+
+                          <span class="badge bg-success">
+                            <%= sizeItem.size %> — In Stock
+                          </span>
+
+                        <% } %>
+
+                      <% }) %>
+
+                    </div>
 
                   <% } %>
 
@@ -91,7 +117,7 @@
 
                   </a>
 
-                  <% if (!product.stock || product.stock <= 0) { %>
+                  <% if (totalStock <= 0) { %>
 
                     <button
                       class="btn btn-secondary"
