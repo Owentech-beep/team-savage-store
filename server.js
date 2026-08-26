@@ -163,17 +163,17 @@ app.get("/admin", isAdmin, async (req, res) => {
     const products = await Product.find().sort({ createdAt: -1 });
     const orders = await Order.find().sort({ createdAt: -1 });
 
-    // Start of today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Count orders placed today
     const ordersToday = orders.filter(
       (order) => new Date(order.createdAt) >= today,
     ).length;
 
-    // Calculate total revenue
-    const revenue = orders.reduce((sum, order) => sum + order.total, 0);
+    const revenue = orders.reduce(
+      (sum, order) => sum + order.total,
+      0,
+    );
 
     res.render("admin", {
       products,
@@ -777,12 +777,33 @@ app.post("/api/orders", express.json(), async (req, res) => {
       status: "Pending",
     });
 
-    console.log("EFT Order saved:", order._id);
+        console.log("EFT Order saved:", order._id);
 
+    // =====================================
+    // NOTIFY ADMIN ABOUT NEW EFT ORDER
+    // =====================================
+    try {
+      await sendAdminOrderNotification(order);
+
+      console.log(
+        "Admin notification email sent for order:",
+        order._id,
+      );
+    } catch (emailError) {
+      console.error(
+        "Error sending admin notification email:",
+        emailError,
+      );
+    }
+
+    // =====================================
+    // SEND SUCCESS RESPONSE
+    // =====================================
     res.status(201).json({
       success: true,
       orderId: order._id,
     });
+
   } catch (error) {
     console.error("Error saving EFT order:", error);
 
@@ -838,8 +859,7 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
 
       if (product.category === "Clothing") {
         const selectedSize = product.sizes.find(
-          (sizeItem) =>
-            sizeItem.size === item.size,
+          (sizeItem) => sizeItem.size === item.size,
         );
 
         // Size no longer exists
@@ -883,8 +903,7 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
 
       if (product.category === "Clothing") {
         const selectedSize = product.sizes.find(
-          (sizeItem) =>
-            sizeItem.size === item.size,
+          (sizeItem) => sizeItem.size === item.size,
         );
 
         selectedSize.stock -= Number(item.quantity);
@@ -914,22 +933,30 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
     );
 
     // =====================================
-    // SEND EMAILS
+    // SEND CUSTOMER PAYMENT CONFIRMATION
     // =====================================
 
     console.log(
-      "About to send EFT confirmation email...",
+      "About to send customer payment confirmation email...",
     );
 
-    await sendOrderConfirmation(order);
+    try {
+      await sendOrderConfirmation(order);
 
-    await sendAdminOrderNotification(order);
+      console.log(
+        "Customer payment confirmation email sent.",
+      );
+    } catch (emailError) {
+      console.error(
+        "Error sending customer confirmation email:",
+        emailError,
+      );
+    }
 
-    console.log(
-      "EFT confirmation function finished.",
-    );
+    // =====================================
+    // REDIRECT BACK TO ADMIN
+    // =====================================
 
-    // Redirect back to admin
     res.redirect("/admin");
 
   } catch (error) {
@@ -942,7 +969,6 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
     res.status(500).send(
       "Unable to confirm payment",
     );
-
   }
 });
 

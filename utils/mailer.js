@@ -149,9 +149,7 @@ export async function sendOrderConfirmation(order) {
 }
 
 export async function sendAdminOrderNotification(order) {
-
   try {
-
     const orderNumber = order._id
       .toString()
       .slice(-6)
@@ -160,218 +158,212 @@ export async function sendAdminOrderNotification(order) {
     const address = order.address || {};
 
     const itemsHtml = (order.items || [])
-      .map(item => `
-        <tr>
-          <td style="padding: 10px; border-bottom: 1px solid #ddd;">
-            ${item.name || "Product"}
-          </td>
+      .map(
+        (item) => `
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+              ${item.name || "Product"}
+            </td>
 
-          <td style="padding: 10px; border-bottom: 1px solid #ddd;">
-            ${item.size || "-"}
-          </td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+              ${item.size || "-"}
+            </td>
 
-          <td style="padding: 10px; border-bottom: 1px solid #ddd;">
-            ${item.color || "-"}
-          </td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+              ${item.color || "-"}
+            </td>
 
-          <td style="padding: 10px; border-bottom: 1px solid #ddd;">
-            ${item.quantity || 1}
-          </td>
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+              ${item.quantity || 1}
+            </td>
 
-          <td style="padding: 10px; border-bottom: 1px solid #ddd;">
-            R${Number(item.price || 0).toFixed(2)}
-          </td>
-        </tr>
-      `)
+            <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+              R${Number(item.price || 0).toFixed(2)}
+            </td>
+          </tr>
+        `,
+      )
       .join("");
 
-    const { data, error } =
-      await resend.emails.send({
+    const { data, error } = await resend.emails.send({
+      from: "TEAM SAVAGE <info@teamsavage.online>",
 
-        from: "TEAM SAVAGE <info@teamsavage.online>",
+      to: [process.env.EMAIL_USER],
 
-        to: [process.env.EMAIL_USER],
+      subject: `New EFT Order #${orderNumber}`,
 
-        subject:
-          ` NEW PAID ORDER #${orderNumber}`,
+      html: `
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 700px;
+          margin: auto;
+          padding: 20px;
+        ">
 
-        html: `
+          <h2 style="color: #f0ad00;">
+            TEAM SAVAGE
+          </h2>
 
-          <div style="
-            font-family: Arial, sans-serif;
-            max-width: 700px;
-            margin: auto;
-            padding: 20px;
+          <h1>
+            New EFT Order
+          </h1>
+
+          <p>
+            A customer has placed a new order and selected EFT as the payment method.
+          </p>
+
+          <p>
+            Please check the payment before confirming the order in the admin dashboard.
+          </p>
+
+          <hr>
+
+          <h2>Customer Details</h2>
+
+          <p>
+            <strong>Name:</strong>
+            ${order.customerName || "-"}
+          </p>
+
+          <p>
+            <strong>Email:</strong>
+            ${order.customerEmail || "-"}
+          </p>
+
+          <p>
+            <strong>Phone:</strong>
+            ${order.customerPhone || "-"}
+          </p>
+
+          <hr>
+
+          <h2>Delivery Address</h2>
+
+          <p>
+            <strong>Street:</strong>
+            ${address.street || "-"}
+          </p>
+
+          <p>
+            <strong>City:</strong>
+            ${address.city || "-"}
+          </p>
+
+          <p>
+            <strong>Province:</strong>
+            ${address.province || "-"}
+          </p>
+
+          <p>
+            <strong>Postal Code:</strong>
+            ${address.postalCode || "-"}
+          </p>
+
+          <hr>
+
+          <h2>Order Details</h2>
+
+          <p>
+            <strong>Order Number:</strong>
+            #${orderNumber}
+          </p>
+
+          <p>
+            <strong>Payment Method:</strong>
+            ${order.paymentMethod || "EFT"}
+          </p>
+
+          <p>
+            <strong>Payment Status:</strong>
+            ${order.paymentStatus || "Pending"}
+          </p>
+
+          <p>
+            <strong>Order Status:</strong>
+            ${order.status || "Pending"}
+          </p>
+
+          <table style="
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
           ">
 
-            <h2 style="color: #f0ad00;">
-               TEAM SAVAGE
-            </h2>
+            <thead>
+              <tr style="background: #f8f9fa;">
+                <th style="padding: 10px; text-align: left;">
+                  Product
+                </th>
 
-            <h1>
-              New Paid Order
-            </h1>
+                <th style="padding: 10px; text-align: left;">
+                  Size
+                </th>
 
-            <p>
-              An EFT order has been confirmed and paid.
-            </p>
+                <th style="padding: 10px; text-align: left;">
+                  Color
+                </th>
 
-            <hr>
+                <th style="padding: 10px; text-align: left;">
+                  Qty
+                </th>
 
-            <h2> Customer Details</h2>
+                <th style="padding: 10px; text-align: left;">
+                  Price
+                </th>
+              </tr>
+            </thead>
 
-            <p>
-              <strong>Name:</strong>
-              ${order.customerName || "-"}
-            </p>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
 
-            <p>
-              <strong>Email:</strong>
-              ${order.customerEmail || "-"}
-            </p>
+          </table>
 
-            <p>
-              <strong>Phone:</strong>
-              ${order.customerPhone || "-"}
-            </p>
+          <hr>
 
-            <hr>
+          <h2>Payment Summary</h2>
 
-            <h2> Delivery Address</h2>
+          <p>
+            <strong>Subtotal:</strong>
+            R${Number(order.subtotal || 0).toFixed(2)}
+          </p>
 
-            <p>
-              <strong>Street:</strong>
-              ${address.street || "-"}
-            </p>
+          <p>
+            <strong>Delivery Fee:</strong>
+            R${Number(order.deliveryFee || 0).toFixed(2)}
+          </p>
 
-            <p>
-              <strong>City:</strong>
-              ${address.city || "-"}
-            </p>
+          <p style="font-size: 20px;">
+            <strong>Total:</strong>
+            R${Number(order.total || 0).toFixed(2)}
+          </p>
 
-            <p>
-              <strong>Province:</strong>
-              ${address.province || "-"}
-            </p>
+          <hr>
 
-            <p>
-              <strong>Postal Code:</strong>
-              ${address.postalCode || "-"}
-            </p>
+          <p>
+            <strong>TEAM SAVAGE Admin Notification</strong>
+          </p>
 
-            <hr>
-
-            <h2> Order Details</h2>
-
-            <p>
-              <strong>Order Number:</strong>
-              #${orderNumber}
-            </p>
-
-            <p>
-              <strong>Payment Method:</strong>
-              ${order.paymentMethod || "EFT"}
-            </p>
-
-            <p>
-              <strong>Payment Status:</strong>
-              ${order.paymentStatus || "Paid"}
-            </p>
-
-            <p>
-              <strong>Order Status:</strong>
-              ${order.status || "Pending"}
-            </p>
-
-            <table style="
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-            ">
-
-              <thead>
-
-                <tr style="background: #f8f9fa;">
-
-                  <th style="padding: 10px; text-align: left;">
-                    Product
-                  </th>
-
-                  <th style="padding: 10px; text-align: left;">
-                    Size
-                  </th>
-
-                  <th style="padding: 10px; text-align: left;">
-                    Color
-                  </th>
-
-                  <th style="padding: 10px; text-align: left;">
-                    Qty
-                  </th>
-
-                  <th style="padding: 10px; text-align: left;">
-                    Price
-                  </th>
-
-                </tr>
-
-              </thead>
-
-              <tbody>
-                ${itemsHtml}
-              </tbody>
-
-            </table>
-
-            <hr>
-
-            <h2> Payment Summary</h2>
-
-            <p>
-              <strong>Subtotal:</strong>
-              R${Number(order.subtotal || 0).toFixed(2)}
-            </p>
-
-            <p>
-              <strong>Delivery Fee:</strong>
-              R${Number(order.deliveryFee || 0).toFixed(2)}
-            </p>
-
-            <p style="font-size: 20px;">
-              <strong>Total:</strong>
-              R${Number(order.total || 0).toFixed(2)}
-            </p>
-
-            <hr>
-
-            <p>
-              <strong>TEAM SAVAGE Admin Notification</strong>
-            </p>
-
-          </div>
-
-        `,
-
-      });
+        </div>
+      `,
+    });
 
     if (error) {
       throw new Error(error.message);
     }
 
     console.log(
-      ` Admin order notification sent for Order ${orderNumber}`
+      `Admin order notification sent for Order ${orderNumber}`,
     );
 
     return data;
 
   } catch (error) {
-
     console.error(
-      " Admin order notification failed:",
-      error
+      "Admin order notification failed:",
+      error,
     );
 
     throw error;
-
   }
 }

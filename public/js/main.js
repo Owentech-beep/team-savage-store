@@ -33,7 +33,7 @@ async function startCheckout() {
   const email = formData.get("email");
   const phone = formData.get("phone");
 
-  const street = formData.get("address");
+  const street = formData.get("street");
   const city = formData.get("city");
   const province = formData.get("province");
   const postalCode = formData.get("postalCode");
