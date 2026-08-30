@@ -419,9 +419,46 @@
             <input
               type="file"
               name="image"
+              id="mainImageInput"
               class="form-control"
               accept="image/*"
               required>
+
+            <!-- MAIN IMAGE PREVIEW -->
+            <div
+              id="mainImagePreviewContainer"
+              class="mt-3 d-none">
+
+              <p class="small fw-semibold mb-2">
+                Image Preview
+              </p>
+
+              <div
+                class="border rounded p-2 bg-light text-center"
+                style="
+        width: 100%;
+        max-width: 500px;
+        height: 350px;
+        overflow: hidden;
+      ">
+
+                <img
+                  id="mainImagePreview"
+                  src
+                  alt="Main product preview"
+                  style="
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        ">
+
+              </div>
+
+              <small class="text-muted">
+                Preview: 500 × 350 px
+              </small>
+
+            </div>
 
           </div>
 
@@ -435,9 +472,20 @@
             <input
               type="file"
               name="gallery"
+              id="galleryInput"
               class="form-control"
               accept="image/*"
               multiple>
+
+            <!-- GALLERY PREVIEW -->
+            <div
+              id="galleryPreview"
+              class="row g-2 mt-3">
+            </div>
+
+            <small class="text-muted">
+              Select up to 3 images. Each image can be cropped individually.
+            </small>
 
           </div>
 
@@ -1176,5 +1224,556 @@
   </main>
 
 </div>
+
+<!-- =============================== -->
+<!-- IMAGE CROPPER MODAL -->
+<!-- =============================== -->
+
+<div
+  class="modal fade"
+  id="imageCropperModal"
+  tabindex="-1"
+  aria-hidden="true">
+
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+
+        <h5 class="modal-title fw-bold">
+          Crop Product Image
+        </h5>
+
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close">
+        </button>
+
+      </div>
+
+      <div class="modal-body">
+
+        <div
+          style="
+            width: 100%;
+            max-height: 500px;
+            overflow: hidden;
+          ">
+
+          <img
+            id="cropperImage"
+            src
+            alt="Image to crop"
+            style="
+              display: block;
+              max-width: 100%;
+            ">
+
+        </div>
+
+        <div class="mt-3 text-muted small">
+          Drag the image to reposition it and use
+          the mouse wheel or touch gestures to zoom.
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal">
+
+          Cancel
+
+        </button>
+
+        <button
+          type="button"
+          id="applyCrop"
+          class="btn btn-warning">
+
+          <i class="fa-solid fa-crop-simple me-2"></i>
+          Apply Crop
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- =============================== -->
+<!-- CROPPER.JS -->
+<!-- =============================== -->
+
+<script
+  src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js">
+</script>
+
+<script>
+
+  // =====================================
+  // CROPPER VARIABLES
+  // =====================================
+
+  let cropper = null;
+
+  let currentInput = null;
+
+  let currentFileIndex = null;
+
+  let currentType = null;
+
+
+  // =====================================
+  // CROPPER MODAL
+  // =====================================
+
+  const cropperModalElement =
+    document.getElementById("imageCropperModal");
+
+  const cropperModal =
+    new bootstrap.Modal(cropperModalElement);
+
+  const cropperImage =
+    document.getElementById("cropperImage");
+
+  const applyCropButton =
+    document.getElementById("applyCrop");
+
+
+  // =====================================
+  // OPEN CROPPER
+  // =====================================
+
+  function openCropper(
+    file,
+    input,
+    type,
+    index = null
+  ) {
+
+    currentInput = input;
+
+    currentFileIndex = index;
+
+    currentType = type;
+
+    const imageURL =
+      URL.createObjectURL(file);
+
+    cropperImage.src = imageURL;
+
+    cropperModal.show();
+
+    cropperImage.onload = function () {
+
+      if (cropper) {
+        cropper.destroy();
+      }
+
+      cropper = new Cropper(
+        cropperImage,
+        {
+
+          // Same ratio as our product display
+          aspectRatio: 500 / 350,
+
+          viewMode: 1,
+
+          dragMode: "move",
+
+          autoCropArea: 0.9,
+
+          responsive: true,
+
+          background: false,
+
+          zoomable: true,
+
+          movable: true,
+
+          cropBoxResizable: false,
+
+          cropBoxMovable: false,
+
+          guides: true,
+
+          center: true,
+
+        }
+      );
+
+    };
+
+  }
+
+
+  // =====================================
+  // MAIN IMAGE
+  // =====================================
+
+  const mainImageInput =
+    document.getElementById(
+      "mainImageInput"
+    );
+
+  const mainImagePreview =
+    document.getElementById(
+      "mainImagePreview"
+    );
+
+  const mainImagePreviewContainer =
+    document.getElementById(
+      "mainImagePreviewContainer"
+    );
+
+
+  mainImageInput.addEventListener(
+    "change",
+    function () {
+
+      const file = this.files[0];
+
+      if (!file) {
+
+        mainImagePreview.src = "";
+
+        mainImagePreviewContainer.classList.add(
+          "d-none"
+        );
+
+        return;
+
+      }
+
+      openCropper(
+        file,
+        this,
+        "main"
+      );
+
+    }
+  );
+
+
+  // =====================================
+  // GALLERY IMAGES
+  // =====================================
+
+  const galleryInput =
+    document.getElementById(
+      "galleryInput"
+    );
+
+  const galleryPreview =
+    document.getElementById(
+      "galleryPreview"
+    );
+
+
+  galleryInput.addEventListener(
+    "change",
+    function () {
+
+      galleryPreview.innerHTML = "";
+
+      const files =
+        Array.from(this.files);
+
+
+      // Maximum 3 images
+      if (files.length > 3) {
+
+        alert(
+          "You can upload a maximum of 3 gallery images."
+        );
+
+        this.value = "";
+
+        return;
+
+      }
+
+
+      files.forEach(
+        (file, index) => {
+
+          const imageURL =
+            URL.createObjectURL(file);
+
+
+          const column =
+            document.createElement("div");
+
+          column.className =
+            "col-4";
+
+
+          column.innerHTML = `
+
+            <div
+              class="border rounded p-1 bg-light"
+              style="
+                height: 120px;
+                overflow: hidden;
+              ">
+
+              <img
+                src="${imageURL}"
+                alt="Gallery preview"
+                style="
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                ">
+
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-warning w-100 mt-2">
+
+              <i class="fa-solid fa-crop-simple me-1"></i>
+              Crop Image
+
+            </button>
+
+          `;
+
+
+          const cropButton =
+            column.querySelector(
+              "button"
+            );
+
+
+          cropButton.addEventListener(
+            "click",
+            function () {
+
+              openCropper(
+                file,
+                galleryInput,
+                "gallery",
+                index
+              );
+
+            }
+          );
+
+
+          galleryPreview.appendChild(
+            column
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+  // =====================================
+  // APPLY CROP
+  // =====================================
+
+  applyCropButton.addEventListener(
+    "click",
+    function () {
+
+      if (!cropper) {
+        return;
+      }
+
+
+      const canvas =
+        cropper.getCroppedCanvas({
+
+          width: 1000,
+
+          height: 700,
+
+          imageSmoothingEnabled: true,
+
+          imageSmoothingQuality: "high",
+
+        });
+
+
+      canvas.toBlob(
+        function (blob) {
+
+          const croppedFile =
+            new File(
+              [blob],
+              "cropped-image.jpg",
+              {
+                type: "image/jpeg",
+              }
+            );
+
+
+          const imageURL =
+            URL.createObjectURL(
+              croppedFile
+            );
+
+
+          // =================================
+          // MAIN IMAGE
+          // =================================
+
+          if (
+            currentType === "main"
+          ) {
+
+            mainImagePreview.src =
+              imageURL;
+
+            mainImagePreviewContainer.classList.remove(
+              "d-none"
+            );
+
+
+            replaceInputFiles(
+              mainImageInput,
+              [croppedFile]
+            );
+
+          }
+
+
+          // =================================
+          // GALLERY IMAGE
+          // =================================
+
+          if (
+            currentType === "gallery"
+          ) {
+
+            replaceGalleryFile(
+              currentFileIndex,
+              croppedFile
+            );
+
+          }
+
+
+          // Destroy cropper
+          if (cropper) {
+
+            cropper.destroy();
+
+            cropper = null;
+
+          }
+
+
+          cropperModal.hide();
+
+        },
+
+        "image/jpeg",
+
+        0.9
+
+      );
+
+    }
+  );
+
+
+  // =====================================
+  // REPLACE INPUT FILES
+  // =====================================
+
+  function replaceInputFiles(
+    input,
+    files
+  ) {
+
+    const dataTransfer =
+      new DataTransfer();
+
+
+    files.forEach(
+      file => {
+
+        dataTransfer.items.add(file);
+
+      }
+    );
+
+
+    input.files =
+      dataTransfer.files;
+
+  }
+
+
+  // =====================================
+  // REPLACE GALLERY FILE
+  // =====================================
+
+  function replaceGalleryFile(
+    index,
+    croppedFile
+  ) {
+
+    const files =
+      Array.from(
+        galleryInput.files
+      );
+
+
+    files[index] =
+      croppedFile;
+
+
+    replaceInputFiles(
+      galleryInput,
+      files
+    );
+
+
+    // Refresh gallery previews
+    galleryInput.dispatchEvent(
+      new Event("change")
+    );
+
+  }
+
+
+  // =====================================
+  // CLEAN UP CROPPER
+  // =====================================
+
+  cropperModalElement.addEventListener(
+    "hidden.bs.modal",
+    function () {
+
+      if (cropper) {
+
+        cropper.destroy();
+
+        cropper = null;
+
+      }
+
+      cropperImage.src = "";
+
+    }
+  );
+
+</script>
 
 <%- include("partials/footer") %>
