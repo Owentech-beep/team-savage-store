@@ -15,6 +15,26 @@
 
       <% products.forEach(product => { %>
 
+        <%
+          // Calculate the correct stock for each product type
+          let availableStock = 0;
+
+          if (product.category === "Clothing") {
+
+            // Clothing stock is stored per size
+            availableStock = (product.sizes || []).reduce(
+              (total, size) => total + Number(size.stock || 0),
+              0
+            );
+
+          } else {
+
+            // Accessories use normal stock
+            availableStock = Number(product.stock || 0);
+
+          }
+        %>
+
         <div class="col-md-6 col-lg-3">
 
           <div class="featured-product-card h-100 d-flex flex-column">
@@ -46,25 +66,31 @@
               <!-- STOCK STATUS -->
               <div class="mb-4">
 
-                <% if (!product.stock || product.stock <= 0) { %>
+                <% if (availableStock <= 0) { %>
 
                   <span class="badge bg-danger">
+
                     <i class="fa-solid fa-circle-xmark me-1"></i>
                     Out of Stock
+
                   </span>
 
-                <% } else if (product.stock <= 5) { %>
+                <% } else if (availableStock <= 5) { %>
 
                   <span class="badge bg-warning text-dark">
+
                     <i class="fa-solid fa-triangle-exclamation me-1"></i>
-                    Only <%= product.stock %> left
+                    Only <%= availableStock %> left
+
                   </span>
 
                 <% } else { %>
 
                   <span class="badge bg-success">
+
                     <i class="fa-solid fa-circle-check me-1"></i>
-                    In Stock — <%= product.stock %> left
+                    In Stock — <%= availableStock %> left
+
                   </span>
 
                 <% } %>
@@ -81,7 +107,9 @@
 
                 </a>
 
-                <% if (!product.stock || product.stock <= 0) { %>
+
+                <!-- OUT OF STOCK -->
+                <% if (availableStock <= 0) { %>
 
                   <button
                     class="btn btn-secondary"
@@ -92,24 +120,30 @@
 
                   </button>
 
+
+                <!-- ACCESSORIES -->
                 <% } else if (["Bags", "Bottles", "Tumblers", "Gym Straps"].includes(product.category)) { %>
 
-                  <button class="btn btn-warning add-to-cart"
-                          data-id="<%= product._id %>"
-                          data-name="<%= product.name %>"
-                          data-price="<%= product.price %>"
-                          data-image="<%= product.image %>"
-                          data-stock="<%= product.stock %>">
+                  <button
+                    class="btn btn-warning add-to-cart"
+                    data-id="<%= product._id %>"
+                    data-name="<%= product.name %>"
+                    data-price="<%= product.price %>"
+                    data-image="<%= product.image %>"
+                    data-stock="<%= availableStock %>">
 
                     <i class="fa-solid fa-cart-shopping me-2"></i>
                     Add to Cart
 
                   </button>
 
+
+                <!-- CLOTHING -->
                 <% } else { %>
 
-                  <a href="/product/<%= product._id %>"
-                     class="btn btn-warning">
+                  <a
+                    href="/product/<%= product._id %>"
+                    class="btn btn-warning">
 
                     <i class="fa-solid fa-shirt me-2"></i>
                     Choose Size & Colour
