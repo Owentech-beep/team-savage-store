@@ -14,6 +14,11 @@ import {
 } from "./utils/mailer.js";
 import session from "express-session";
 import bcrypt from "bcrypt";
+import {
+  generatePayfastSignature,
+  getPayfastUrl,
+  getPayfastValidateUrl,
+} from "./utils/payfast.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -63,13 +68,15 @@ app.use(express.json());
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "team-savage-secret-key",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
   }),
 );
 // EJS
 app.set("view engine", "ejs");
+
+app.set("trust proxy", 1);
 
 function isAdmin(req, res, next) {
   if (req.session && req.session.isAdmin) {
@@ -170,10 +177,7 @@ app.get("/admin", isAdmin, async (req, res) => {
       (order) => new Date(order.createdAt) >= today,
     ).length;
 
-    const revenue = orders.reduce(
-      (sum, order) => sum + order.total,
-      0,
-    );
+    const revenue = orders.reduce((sum, order) => sum + order.total, 0);
 
     res.render("admin", {
       products,
@@ -676,8 +680,7 @@ app.post("/api/orders", express.json(), async (req, res) => {
         }
 
         const selectedSize = product.sizes.find(
-          (sizeItem) =>
-            sizeItem.size.toLowerCase() === item.size.toLowerCase(),
+          (sizeItem) => sizeItem.size.toLowerCase() === item.size.toLowerCase(),
         );
 
         if (!selectedSize) {
@@ -777,7 +780,7 @@ app.post("/api/orders", express.json(), async (req, res) => {
       status: "Pending",
     });
 
-        console.log("EFT Order saved:", order._id);
+    console.log("EFT Order saved:", order._id);
 
     // =====================================
     // NOTIFY ADMIN ABOUT NEW EFT ORDER
@@ -785,15 +788,9 @@ app.post("/api/orders", express.json(), async (req, res) => {
     try {
       await sendAdminOrderNotification(order);
 
-      console.log(
-        "Admin notification email sent for order:",
-        order._id,
-      );
+      console.log("Admin notification email sent for order:", order._id);
     } catch (emailError) {
-      console.error(
-        "Error sending admin notification email:",
-        emailError,
-      );
+      console.error("Error sending admin notification email:", emailError);
     }
 
     // =====================================
@@ -803,7 +800,6 @@ app.post("/api/orders", express.json(), async (req, res) => {
       success: true,
       orderId: order._id,
     });
-
   } catch (error) {
     console.error("Error saving EFT order:", error);
 
@@ -848,9 +844,7 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
       const product = await Product.findById(item.productId);
 
       if (!product) {
-        return res.status(400).send(
-          `Product "${item.name}" no longer exists.`,
-        );
+        return res.status(400).send(`Product "${item.name}" no longer exists.`);
       }
 
       // =====================================
@@ -864,28 +858,33 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
 
         // Size no longer exists
         if (!selectedSize) {
-          return res.status(400).send(
-            `Size "${item.size}" is no longer available for "${product.name}".`,
-          );
+          return res
+            .status(400)
+            .send(
+              `Size "${item.size}" is no longer available for "${product.name}".`,
+            );
         }
 
         // Not enough stock for selected size
         if (selectedSize.stock < Number(item.quantity)) {
-          return res.status(400).send(
-            `Cannot confirm payment. Only ${selectedSize.stock} "${product.name}" item(s) in size ${item.size} left in stock.`,
-          );
+          return res
+            .status(400)
+            .send(
+              `Cannot confirm payment. Only ${selectedSize.stock} "${product.name}" item(s) in size ${item.size} left in stock.`,
+            );
         }
       }
 
       // =====================================
       // ACCESSORIES — CHECK NORMAL STOCK
       // =====================================
-
       else {
         if (product.stock < Number(item.quantity)) {
-          return res.status(400).send(
-            `Cannot confirm payment. Only ${product.stock} "${product.name}" item(s) left in stock.`,
-          );
+          return res
+            .status(400)
+            .send(
+              `Cannot confirm payment. Only ${product.stock} "${product.name}" item(s) left in stock.`,
+            );
         }
       }
     }
@@ -912,7 +911,6 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
       // =====================================
       // ACCESSORIES — REDUCE NORMAL STOCK
       // =====================================
-
       else {
         product.stock -= Number(item.quantity);
       }
@@ -928,29 +926,20 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
 
     await order.save();
 
-    console.log(
-      `EFT PAYMENT CONFIRMED — Order ${order._id}`,
-    );
+    console.log(`EFT PAYMENT CONFIRMED — Order ${order._id}`);
 
     // =====================================
     // SEND CUSTOMER PAYMENT CONFIRMATION
     // =====================================
 
-    console.log(
-      "About to send customer payment confirmation email...",
-    );
+    console.log("About to send customer payment confirmation email...");
 
     try {
       await sendOrderConfirmation(order);
 
-      console.log(
-        "Customer payment confirmation email sent.",
-      );
+      console.log("Customer payment confirmation email sent.");
     } catch (emailError) {
-      console.error(
-        "Error sending customer confirmation email:",
-        emailError,
-      );
+      console.error("Error sending customer confirmation email:", emailError);
     }
 
     // =====================================
@@ -958,19 +947,805 @@ app.post("/admin/orders/:id/payment", isAdmin, async (req, res) => {
     // =====================================
 
     res.redirect("/admin");
-
   } catch (error) {
+    console.error("Error confirming EFT payment:", error);
 
-    console.error(
-      "Error confirming EFT payment:",
-      error,
-    );
-
-    res.status(500).send(
-      "Unable to confirm payment",
-    );
+    res.status(500).send("Unable to confirm payment");
   }
 });
+
+// =====================================
+// PAYFAST SOURCE IP VALIDATION
+// =====================================
+
+function ipv4ToNumber(ip) {
+  const parts = ip.split(".").map(Number);
+
+  if (
+    parts.length !== 4 ||
+    parts.some(
+      (part) =>
+        !Number.isInteger(part) ||
+        part < 0 ||
+        part > 255
+    )
+  ) {
+    return null;
+  }
+
+  return (
+    (((parts[0] << 24) >>> 0) +
+      ((parts[1] << 16) >>> 0) +
+      ((parts[2] << 8) >>> 0) +
+      parts[3]) >>> 0
+  );
+}
+
+function isIpInCidr(ip, cidr) {
+  if (ip.startsWith("::ffff:")) {
+    ip = ip.substring(7);
+  }
+
+  const [network, prefixLengthString] =
+    cidr.split("/");
+
+  const prefixLength =
+    Number(prefixLengthString);
+
+  const ipNumber = ipv4ToNumber(ip);
+  const networkNumber = ipv4ToNumber(network);
+
+  if (
+    ipNumber === null ||
+    networkNumber === null ||
+    !Number.isInteger(prefixLength) ||
+    prefixLength < 0 ||
+    prefixLength > 32
+  ) {
+    return false;
+  }
+
+  const mask =
+    prefixLength === 0
+      ? 0
+      : (0xffffffff << (32 - prefixLength)) >>> 0;
+
+  return (
+    (ipNumber & mask) ===
+    (networkNumber & mask)
+  );
+}
+
+function isPayfastIp(ip) {
+  const payfastIps = [
+    "197.97.145.144/28",
+    "41.74.179.192/27",
+    "102.216.36.0/28",
+    "102.216.36.128/28",
+    "144.126.193.139/32",
+  ];
+
+  return payfastIps.some((cidr) =>
+    isIpInCidr(ip, cidr)
+  );
+}
+
+// =====================================
+// CREATE PAYFAST ORDER
+// =====================================
+
+app.post("/api/payfast/create", async (req, res) => {
+  try {
+
+    const { customerName, customerEmail, customerPhone, address, items } =
+      req.body;
+
+    // =====================================
+    // CHECK CART
+    // =====================================
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Your cart is empty.",
+      });
+    }
+
+    // =====================================
+    // VERIFY PRODUCTS + STOCK
+    // =====================================
+
+    const verifiedItems = [];
+    let subtotal = 0;
+
+    for (const item of items) {
+      const product = await Product.findById(item.productId);
+
+      if (!product) {
+        return res.status(400).json({
+          success: false,
+          message: `${item.name} is no longer available.`,
+        });
+      }
+
+      const quantity = Math.max(1, Number(item.quantity) || 1);
+
+      // =====================================
+      // CLOTHING — CHECK SIZE STOCK
+      // =====================================
+
+      if (product.category === "Clothing") {
+        if (!item.size) {
+          return res.status(400).json({
+            success: false,
+            message: `Please select a size for ${product.name}.`,
+          });
+        }
+
+        const selectedSize = product.sizes.find(
+          (sizeItem) => sizeItem.size.toLowerCase() === item.size.toLowerCase(),
+        );
+
+        if (!selectedSize) {
+          return res.status(400).json({
+            success: false,
+            message: `${item.size} is not available for ${product.name}.`,
+          });
+        }
+
+        if (selectedSize.stock <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: `${product.name} in size ${selectedSize.size} is out of stock.`,
+          });
+        }
+
+        if (quantity > selectedSize.stock) {
+          return res.status(400).json({
+            success: false,
+            message: `Sorry, only ${selectedSize.stock} ${product.name} item(s) are available.`,
+          });
+        }
+      }
+
+      // =====================================
+      // ACCESSORIES — CHECK NORMAL STOCK
+      // =====================================
+      else {
+        if (product.stock <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: `${product.name} is out of stock.`,
+          });
+        }
+
+        if (quantity > product.stock) {
+          return res.status(400).json({
+            success: false,
+            message: `Sorry, only ${product.stock} ${product.name} item(s) are available.`,
+          });
+        }
+      }
+
+      // =====================================
+      // USE REAL DATABASE PRICE
+      // =====================================
+
+      const realPrice = Number(product.price);
+
+      subtotal += realPrice * quantity;
+
+      verifiedItems.push({
+        productId: product._id,
+        name: product.name,
+        price: realPrice,
+        quantity,
+        size: item.size || "",
+        color: item.color || "",
+      });
+    }
+
+    // =====================================
+    // CURRENT DELIVERY FEE
+    // =====================================
+
+    const deliveryFee = subtotal > 0 ? 100 : 0;
+
+    const total = subtotal + deliveryFee;
+
+    // =====================================
+    // CREATE PENDING PAYFAST ORDER
+    // =====================================
+
+    const order = await Order.create({
+      customerName,
+      customerEmail,
+      customerPhone,
+      address,
+      items: verifiedItems,
+      subtotal,
+      deliveryFee,
+      total,
+
+      paymentMethod: "Payfast",
+      paymentStatus: "Pending",
+
+      status: "Pending",
+    });
+
+    console.log("Payfast order created:", order._id);
+
+    // =====================================
+    // PAYFAST PAYMENT DATA
+    // =====================================
+
+    const baseUrl = process.env.BASE_URL || "https://teamsavage.online";
+
+    const payfastData = {
+      merchant_id: process.env.PAYFAST_MERCHANT_ID,
+      merchant_key: process.env.PAYFAST_MERCHANT_KEY,
+
+      return_url: `${baseUrl}/order-success/${order._id}`,
+
+      cancel_url: `${baseUrl}/checkout?payment=cancelled`,
+
+      notify_url: `${baseUrl}/api/payfast/itn`,
+
+      name_first: customerName.split(" ")[0],
+
+      name_last:
+        customerName.split(" ").slice(1).join(" ") ||
+        customerName.split(" ")[0],
+
+      email_address: customerEmail,
+
+      cell_number: customerPhone,
+
+      m_payment_id: order._id.toString(),
+
+      amount: Number(total).toFixed(2),
+
+      item_name: `TEAM SAVAGE Order #${order._id
+        .toString()
+        .slice(-6)
+        .toUpperCase()}`,
+    };
+
+    // =====================================
+    // GENERATE PAYFAST SIGNATURE
+    // =====================================
+
+    payfastData.signature = generatePayfastSignature(payfastData);
+
+    // =====================================
+    // SEND PAYFAST DETAILS TO CHECKOUT
+    // =====================================
+
+    res.status(201).json({
+      success: true,
+      orderId: order._id,
+      payfastUrl: getPayfastUrl(),
+      payfastData,
+    });
+  } catch (error) {
+    console.error("Error creating Payfast order:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to create Payfast order.",
+    });
+  }
+});
+
+// =====================================
+// PAYFAST ITN — PRODUCTION READY
+// =====================================
+
+app.post(
+  "/api/payfast/itn",
+  express.urlencoded({ extended: false }),
+  async (req, res) => {
+    let session;
+
+    try {
+      console.log("=====================================");
+      console.log("PAYFAST ITN RECEIVED");
+      console.log("=====================================");
+
+      const paymentData = {
+        ...req.body,
+      };
+
+      // =====================================
+      // VERIFY PAYFAST SOURCE IP
+      // =====================================
+
+      const sourceIp = req.ip;
+
+      console.log(
+        "Payfast ITN source IP:",
+        sourceIp
+      );
+
+      if (!isPayfastIp(sourceIp)) {
+        console.error(
+          "Rejected Payfast ITN from unauthorized IP:",
+          sourceIp
+        );
+
+        return res.status(403).send("Forbidden");
+      }
+
+      console.log(
+        "Payfast source IP verified."
+      );
+
+      // =====================================
+      // BASIC PAYMENT ID CHECK
+      // =====================================
+
+      if (!paymentData.m_payment_id) {
+        console.error(
+          "Payfast ITN missing payment ID."
+        );
+
+        return res.status(400).send("Bad Request");
+      }
+
+      // =====================================
+      // FIND ORDER
+      // =====================================
+
+      const order =
+        await Order.findById(
+          paymentData.m_payment_id
+        );
+
+      if (!order) {
+        console.error(
+          "Payfast order not found:",
+          paymentData.m_payment_id
+        );
+
+        return res.status(404).send("Order not found");
+      }
+
+      // =====================================
+      // VERIFY PAYMENT METHOD
+      // =====================================
+
+      if (
+        order.paymentMethod !== "Payfast"
+      ) {
+        console.error(
+          `Order ${order._id} is not a Payfast order.`
+        );
+
+        return res.status(400).send("Invalid payment method");
+      }
+
+      // =====================================
+      // DUPLICATE PAYMENT PROTECTION
+      // =====================================
+
+      if (
+        order.paymentStatus === "Paid"
+      ) {
+        console.log(
+          `Order ${order._id} is already Paid.`
+        );
+
+        return res.status(200).send("OK");
+      }
+
+      // =====================================
+      // VERIFY PAYMENT STATUS
+      // =====================================
+
+      if (
+        paymentData.payment_status !==
+        "COMPLETE"
+      ) {
+        console.log(
+          "Payfast payment is not complete:",
+          paymentData.payment_status
+        );
+
+        return res.status(200).send("OK");
+      }
+
+      // =====================================
+      // VERIFY MERCHANT ID
+      // =====================================
+
+      if (
+        paymentData.merchant_id !==
+        process.env.PAYFAST_MERCHANT_ID
+      ) {
+        console.error(
+          "Payfast merchant ID mismatch."
+        );
+
+        return res.status(400).send(
+          "Invalid merchant"
+        );
+      }
+
+      console.log(
+        "Payfast merchant ID verified."
+      );
+
+      // =====================================
+      // VERIFY SIGNATURE
+      // =====================================
+
+      const receivedSignature =
+        paymentData.signature;
+
+      const calculatedSignature =
+        generatePayfastSignature(
+          paymentData
+        );
+
+      if (
+        !receivedSignature ||
+        receivedSignature !==
+          calculatedSignature
+      ) {
+        console.error(
+          "Payfast ITN signature validation failed."
+        );
+
+        return res.status(400).send(
+          "Invalid signature"
+        );
+      }
+
+      console.log(
+        "Payfast signature verified."
+      );
+
+      // =====================================
+      // VERIFY PAYMENT AMOUNT
+      // =====================================
+
+      const receivedAmount =
+        Number(
+          paymentData.amount_gross
+        );
+
+      const orderAmount =
+        Number(order.total);
+
+      if (
+        !Number.isFinite(
+          receivedAmount
+        ) ||
+        Math.abs(
+          receivedAmount -
+            orderAmount
+        ) > 0.01
+      ) {
+        console.error(
+          "Payfast payment amount mismatch."
+        );
+
+        console.error(
+          "Expected:",
+          orderAmount.toFixed(2)
+        );
+
+        console.error(
+          "Received:",
+          receivedAmount
+        );
+
+        return res.status(400).send(
+          "Invalid amount"
+        );
+      }
+
+      console.log(
+        "Payfast payment amount verified."
+      );
+
+      // =====================================
+      // SERVER-SIDE PAYFAST VALIDATION
+      // =====================================
+
+      const validationString =
+        Object.entries(paymentData)
+          .filter(
+            ([key, value]) =>
+              key !== "signature" &&
+              value !== undefined &&
+              value !== null &&
+              value !== ""
+          )
+          .map(
+            ([key, value]) =>
+              `${key}=${encodeURIComponent(
+                String(value)
+              ).replace(/%20/g, "+")}`
+          )
+          .join("&");
+
+      const validateResponse =
+        await fetch(
+          getPayfastValidateUrl(),
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/x-www-form-urlencoded",
+            },
+
+            body: validationString,
+          }
+        );
+
+      const validationResult =
+        (
+          await validateResponse.text()
+        ).trim();
+
+      if (
+        validationResult !==
+        "VALID"
+      ) {
+        console.error(
+          "Payfast server validation failed:",
+          validationResult
+        );
+
+        return res.status(400).send(
+          "Payfast validation failed"
+        );
+      }
+
+      console.log(
+        "Payfast server validation successful."
+      );
+
+      // =====================================
+      // START MONGODB TRANSACTION
+      // =====================================
+
+      session =
+        await mongoose.startSession();
+
+      session.startTransaction();
+
+      // =====================================
+      // RELOAD ORDER INSIDE TRANSACTION
+      // =====================================
+
+      const transactionOrder =
+        await Order.findById(
+          order._id
+        ).session(session);
+
+      if (!transactionOrder) {
+        throw new Error(
+          "Order disappeared before transaction."
+        );
+      }
+
+      // =====================================
+      // DUPLICATE PROTECTION INSIDE TRANSACTION
+      // =====================================
+
+      if (
+        transactionOrder.paymentStatus ===
+        "Paid"
+      ) {
+        await session.commitTransaction();
+        session.endSession();
+
+        console.log(
+          `Order ${transactionOrder._id} was already paid.`
+        );
+
+        return res.status(200).send("OK");
+      }
+
+      // =====================================
+      // REDUCE STOCK ATOMICALLY
+      // =====================================
+
+      for (
+        const item of
+        transactionOrder.items
+      ) {
+        const quantity =
+          Number(item.quantity);
+
+        if (
+          !Number.isInteger(quantity) ||
+          quantity <= 0
+        ) {
+          throw new Error(
+            `Invalid quantity for ${item.name}.`
+          );
+        }
+
+        // =====================================
+        // CLOTHING
+        // =====================================
+
+        if (
+          item.size &&
+          item.size.trim() !== ""
+        ) {
+          const updatedProduct =
+            await Product.findOneAndUpdate(
+              {
+                _id: item.productId,
+
+                sizes: {
+                  $elemMatch: {
+                    size: item.size,
+                    stock: {
+                      $gte: quantity,
+                    },
+                  },
+                },
+              },
+              {
+                $inc: {
+                  "sizes.$.stock":
+                    -quantity,
+                },
+              },
+              {
+                new: true,
+                session,
+              }
+            );
+
+          if (!updatedProduct) {
+            throw new Error(
+              `Not enough stock for ${item.name} size ${item.size}.`
+            );
+          }
+        }
+
+        // =====================================
+        // ACCESSORIES
+        // =====================================
+
+        else {
+          const updatedProduct =
+            await Product.findOneAndUpdate(
+              {
+                _id: item.productId,
+                stock: {
+                  $gte: quantity,
+                },
+              },
+              {
+                $inc: {
+                  stock: -quantity,
+                },
+              },
+              {
+                new: true,
+                session,
+              }
+            );
+
+          if (!updatedProduct) {
+            throw new Error(
+              `Not enough stock for ${item.name}.`
+            );
+          }
+        }
+      }
+
+      // =====================================
+      // MARK ORDER AS PAID
+      // =====================================
+
+      transactionOrder.paymentStatus =
+        "Paid";
+
+      // IMPORTANT:
+      // Fulfilment status stays Pending.
+      transactionOrder.status =
+        "Pending";
+
+      await transactionOrder.save({
+        session,
+      });
+
+      // =====================================
+      // COMMIT TRANSACTION
+      // =====================================
+
+      await session.commitTransaction();
+      session.endSession();
+
+      session = null;
+
+      console.log(
+        `PAYFAST PAYMENT CONFIRMED — Order ${transactionOrder._id}`
+      );
+
+      // =====================================
+      // CUSTOMER CONFIRMATION EMAIL
+      // =====================================
+
+      try {
+        await sendOrderConfirmation(
+          transactionOrder
+        );
+
+        console.log(
+          "Payfast customer confirmation email sent."
+        );
+      } catch (emailError) {
+        console.error(
+          "Payfast customer email error:",
+          emailError
+        );
+      }
+
+      // =====================================
+      // ADMIN NOTIFICATION
+      // =====================================
+
+      try {
+        await sendAdminOrderNotification(
+          transactionOrder
+        );
+
+        console.log(
+          "Payfast admin notification email sent."
+        );
+      } catch (emailError) {
+        console.error(
+          "Payfast admin email error:",
+          emailError
+        );
+      }
+
+      // =====================================
+      // SUCCESS
+      // =====================================
+
+      return res.status(200).send("OK");
+
+    } catch (error) {
+
+      console.error(
+        "Payfast ITN error:",
+        error
+      );
+
+      // =====================================
+      // ROLLBACK TRANSACTION
+      // =====================================
+
+      if (session) {
+        try {
+          await session.abortTransaction();
+        } catch (abortError) {
+          console.error(
+            "Payfast transaction rollback error:",
+            abortError
+          );
+        }
+
+        session.endSession();
+      }
+
+      return res.status(500).send(
+        "Internal Server Error"
+      );
+    }
+  }
+);
 
 app.post("/admin/update-stock/:id", isAdmin, async (req, res) => {
   try {
@@ -1069,18 +1844,12 @@ if (!adminEmail || !adminPassword) {
 }
 
 // Create password hash when server starts
-const adminPasswordHash = await bcrypt.hash(
-  adminPassword,
-  10,
-);
+const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  const validPassword = await bcrypt.compare(
-    password,
-    adminPasswordHash,
-  );
+  const validPassword = await bcrypt.compare(password, adminPasswordHash);
 
   if (email === adminEmail && validPassword) {
     req.session.isAdmin = true;

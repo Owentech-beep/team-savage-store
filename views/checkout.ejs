@@ -149,16 +149,59 @@
                             <span id="checkout-total">R100.00</span>
                         </div>
 
+                        <!-- Payment Methods -->
+
+                        <div class="mb-3">
+                            <h6 class="fw-bold mb-3">Payment Method</h6>
+
+                            <div class="form-check border rounded p-3 mb-2">
+                                <input
+                                    class="form-check-input"
+                                    type="radio"
+                                    name="paymentMethod"
+                                    id="eftPayment"
+                                    value="EFT"
+                                    checked>
+
+                                <label
+                                    class="form-check-label fw-semibold"
+                                    for="eftPayment">
+
+                                    <i
+                                        class="fa-solid fa-building-columns me-2"></i>
+                                    EFT / Bank Transfer
+
+                                </label>
+                            </div>
+
+                            <div class="form-check border rounded p-3">
+                                <input
+                                    class="form-check-input"
+                                    type="radio"
+                                    name="paymentMethod"
+                                    id="payfastPayment"
+                                    value="Payfast">
+
+                                <label
+                                    class="form-check-label fw-semibold"
+                                    for="payfastPayment">
+
+                                    <i class="fa-solid fa-credit-card me-2"></i>
+                                    Payfast
+
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="d-grid gap-3">
 
                             <button
                                 type="button"
-                                onclick="startCheckout()"
+                                onclick="handlePayment()"
                                 class="btn btn-warning w-100 btn-lg">
 
-                                <i
-                                    class="fa-solid fa-building-columns me-2"></i>
-                                Pay with EFT
+                                <i class="fa-solid fa-lock me-2"></i>
+                                Continue to Payment
 
                             </button>
 
@@ -206,11 +249,40 @@ async function getCustomerDetails() {
 }
 
 
+// =====================================
+// HANDLE PAYMENT METHOD
+// =====================================
+
+async function handlePayment() {
+
+    const paymentMethod =
+        document.querySelector(
+            'input[name="paymentMethod"]:checked'
+        ).value;
+
+    if (paymentMethod === "EFT") {
+
+        await placeOrder("EFT");
+
+    }
+
+    if (paymentMethod === "Payfast") {
+
+        await startPayfastPayment();
+
+    }
+
+}
+
+
+// =====================================
+// CREATE EFT ORDER
+// =====================================
+
 async function createOrder(paymentMethod) {
 
     const cart =
         JSON.parse(localStorage.getItem("cart")) || [];
-
 
     if (cart.length === 0) {
 
@@ -220,12 +292,8 @@ async function createOrder(paymentMethod) {
 
     }
 
-
     const form =
         document.getElementById("checkout-form");
-
-
-    // Make sure all required fields are filled
 
     if (!form.checkValidity()) {
 
@@ -235,24 +303,21 @@ async function createOrder(paymentMethod) {
 
     }
 
-
     const customer =
         await getCustomerDetails();
 
-
     const subtotal = cart.reduce(
         (sum, item) =>
-            sum + Number(item.price) * Number(item.quantity),
+            sum +
+            Number(item.price) *
+            Number(item.quantity),
         0
     );
 
-
     const deliveryFee = 100;
-
 
     const total =
         subtotal + deliveryFee;
-
 
     const orderData = {
 
@@ -283,21 +348,13 @@ async function createOrder(paymentMethod) {
 
         items: cart,
 
-        subtotal:
+        subtotal,
 
-            subtotal,
+        deliveryFee,
 
-        deliveryFee:
+        total,
 
-            deliveryFee,
-
-        total:
-
-            total,
-
-        paymentMethod:
-
-            paymentMethod,
+        paymentMethod,
 
     };
 
@@ -337,7 +394,7 @@ async function createOrder(paymentMethod) {
 
 
     console.log(
-        " Order created:",
+        "Order created:",
         result.orderId
     );
 
@@ -346,6 +403,11 @@ async function createOrder(paymentMethod) {
 
 }
 
+
+// =====================================
+// EFT ORDER
+// =====================================
+
 async function placeOrder(paymentMethod) {
 
     try {
@@ -353,28 +415,195 @@ async function placeOrder(paymentMethod) {
         const orderId =
             await createOrder(paymentMethod);
 
-
         if (!orderId) {
 
             return;
 
         }
 
-
         localStorage.removeItem("cart");
-
 
         window.location.href =
             `/order-success/${orderId}`;
-
 
     } catch (error) {
 
         console.error(error);
 
+        alert(
+            error.message ||
+            "Something went wrong while placing your order."
+        );
+
+    }
+
+}
+
+
+// =====================================
+// PAYFAST PAYMENT
+// =====================================
+
+async function startPayfastPayment() {
+
+    try {
+
+        const cart =
+            JSON.parse(localStorage.getItem("cart")) || [];
+
+        if (cart.length === 0) {
+
+            alert("Your cart is empty.");
+
+            return;
+
+        }
+
+        const form =
+            document.getElementById("checkout-form");
+
+        if (!form.checkValidity()) {
+
+            form.reportValidity();
+
+            return;
+
+        }
+
+        const customer =
+            await getCustomerDetails();
+
+
+        const response = await fetch(
+            "/api/payfast/create",
+            {
+
+                method: "POST",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json",
+
+                },
+
+                body: JSON.stringify({
+
+                    customerName:
+                        `${customer.firstName} ${customer.lastName}`,
+
+                    customerEmail:
+                        customer.email,
+
+                    customerPhone:
+                        customer.phone,
+
+                    address: {
+
+                        street:
+                            customer.street,
+
+                        city:
+                            customer.city,
+
+                        province:
+                            customer.province,
+
+                        postalCode:
+                            customer.postalCode,
+
+                    },
+
+                    items: cart.map(item => ({
+                        productId: item.id,
+                        name: item.name,
+                        price: item.price,
+                        image: item.image,
+                        stock: item.stock,
+                        size: item.size,
+                        color: item.color,
+                        quantity: item.quantity
+                    })),
+
+                }),
+
+            }
+        );
+
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok || !result.success) {
+
+            throw new Error(
+                result.message ||
+                "Unable to start Payfast payment."
+            );
+
+        }
+
+
+        console.log(
+            "Payfast order created:",
+            result.orderId
+        );
+
+
+        // =====================================
+        // BUILD PAYFAST FORM
+        // =====================================
+
+        const payfastForm =
+            document.createElement("form");
+
+        payfastForm.method = "POST";
+
+        payfastForm.action =
+            result.payfastUrl;
+
+
+        Object.entries(result.payfastData)
+            .forEach(([key, value]) => {
+
+                const input =
+                    document.createElement("input");
+
+                input.type = "hidden";
+
+                input.name = key;
+
+                input.value = value;
+
+                payfastForm.appendChild(input);
+
+            });
+
+
+        document.body.appendChild(
+            payfastForm
+        );
+
+
+        // =====================================
+        // REDIRECT TO PAYFAST
+        // =====================================
+
+        localStorage.removeItem("cart");
+
+        payfastForm.submit();
+
+    } catch (error) {
+
+        console.error(
+            "Payfast error:",
+            error
+        );
 
         alert(
-            "Something went wrong while placing your order."
+            error.message ||
+            "Unable to start Payfast payment."
         );
 
     }
