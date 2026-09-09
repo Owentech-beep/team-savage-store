@@ -203,7 +203,7 @@ function renderCartPage() {
     })
     .join("");
 
-  const deliveryFee = subtotal > 0 ? 100 : 0;
+  const deliveryFee = subtotal >= 1000 ? 0 : 100;
   const total = subtotal + deliveryFee;
 
   document.getElementById("cart-subtotal").textContent =
@@ -275,7 +275,7 @@ function renderCheckoutPage() {
     })
     .join("");
 
-  const deliveryFee = 100;
+  const deliveryFee = subtotal >= 1000 ? 0 : 100;
   const total = subtotal + deliveryFee;
 
   document.getElementById("checkout-subtotal").textContent =

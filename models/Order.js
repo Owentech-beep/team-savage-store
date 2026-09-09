@@ -56,6 +56,12 @@ const orderSchema = new mongoose.Schema({
     default: "Pending",
   },
 
+  reviewToken: {
+  type: String,
+  unique: true,
+  sparse: true,
+},
+
   createdAt: {
     type: Date,
     default: Date.now,

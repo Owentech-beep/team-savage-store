@@ -3,8 +3,10 @@ import { products } from "./data/products.js";
 import mongoose from "mongoose";
 import Product from "./models/Product.js";
 import Order from "./models/Order.js";
+import Review from "./models/Review.js";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
+import crypto from "crypto";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import path from "path";
 import {
@@ -137,24 +139,298 @@ app.get("/accessories", async (req, res) => {
   res.render("accessories", { products });
 });
 
+// =====================================
+// PRODUCT DETAILS
+// =====================================
 app.get("/product/:id", async (req, res) => {
   try {
-    // Check if ID is valid
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(404).send("Invalid product ID");
-    }
-
     const product = await Product.findById(req.params.id);
 
     if (!product) {
       return res.status(404).send("Product not found");
     }
 
-    res.render("product-details", { product });
-  } catch (error) {
-    console.error(error);
+    // Review token from secure review link
+    const reviewToken = req.query.review || null;
 
-    res.status(500).send("Error loading product");
+    res.render("product-details", {
+      product,
+      reviewToken,
+    });
+  } catch (error) {
+    console.error("Error loading product:", error);
+
+    res.status(500).send("Server error");
+  }
+});
+
+// ===============================
+// GET PRODUCT REVIEWS
+// ===============================
+app.get("/api/reviews/:productId", async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product ID.",
+      });
+    }
+
+    const reviews = await Review.find({
+      productId,
+    }).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      reviews,
+    });
+  } catch (error) {
+    console.error("Error loading reviews:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to load reviews.",
+    });
+  }
+});
+
+// =====================================
+// VERIFY REVIEW TOKEN
+// =====================================
+app.get("/api/reviews/verify/:token/:productId", async (req, res) => {
+  try {
+    const { token, productId } = req.params;
+
+    // =====================================
+    // VALIDATE PRODUCT ID
+    // =====================================
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product.",
+      });
+    }
+
+    // =====================================
+    // FIND DELIVERED ORDER USING TOKEN
+    // =====================================
+
+    const order = await Order.findOne({
+      reviewToken: token,
+      status: "Delivered",
+      "items.productId": productId,
+    });
+
+    // =====================================
+    // TOKEN / ORDER NOT VALID
+    // =====================================
+
+    if (!order) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "This review link is invalid or the order has not been delivered.",
+      });
+    }
+
+    // =====================================
+    // CHECK IF CUSTOMER ALREADY REVIEWED
+    // =====================================
+
+    const existingReview = await Review.findOne({
+      productId,
+      customerEmail: order.customerEmail,
+    });
+
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already reviewed this product.",
+      });
+    }
+
+    // =====================================
+    // TOKEN IS VALID
+    // =====================================
+
+    res.json({
+      success: true,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      productId,
+    });
+  } catch (error) {
+    console.error("Error verifying review token:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to verify review link.",
+    });
+  }
+});
+
+// ===============================
+// SUBMIT PRODUCT REVIEW
+// ===============================
+app.post("/api/reviews", async (req, res) => {
+  try {
+    const { productId, reviewToken, rating, comment } = req.body;
+
+    // =====================================
+    // BASIC VALIDATION
+    // =====================================
+
+    if (!productId || !reviewToken || !rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: "Please complete all review fields.",
+      });
+    }
+
+    // =====================================
+    // VALIDATE PRODUCT ID
+    // =====================================
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product.",
+      });
+    }
+
+    // =====================================
+    // VALIDATE RATING
+    // =====================================
+
+    const reviewRating = Number(rating);
+
+    if (
+      !Number.isInteger(reviewRating) ||
+      reviewRating < 1 ||
+      reviewRating > 5
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating must be between 1 and 5 stars.",
+      });
+    }
+
+    // =====================================
+    // VALIDATE COMMENT
+    // =====================================
+
+    const cleanComment = comment.trim();
+
+    if (!cleanComment) {
+      return res.status(400).json({
+        success: false,
+        message: "Please write a review.",
+      });
+    }
+
+    if (cleanComment.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: "Review cannot exceed 1000 characters.",
+      });
+    }
+
+    // =====================================
+    // CHECK PRODUCT EXISTS
+    // =====================================
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found.",
+      });
+    }
+
+    // =====================================
+    // VERIFY REVIEW TOKEN
+    // =====================================
+
+    const deliveredOrder = await Order.findOne({
+      reviewToken,
+      status: "Delivered",
+      items: {
+        $elemMatch: {
+          productId: productId,
+        },
+      },
+    });
+
+    if (!deliveredOrder) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "This review link is invalid or the order has not been delivered.",
+      });
+    }
+
+    // =====================================
+    // GET CUSTOMER DETAILS FROM ORDER
+    // =====================================
+
+    const customerName = deliveredOrder.customerName;
+
+    const customerEmail = deliveredOrder.customerEmail.trim().toLowerCase();
+
+    // =====================================
+    // PREVENT DUPLICATE REVIEW
+    // =====================================
+
+    const existingReview = await Review.findOne({
+      productId,
+      customerEmail,
+    });
+
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already reviewed this product.",
+      });
+    }
+
+    // =====================================
+    // CREATE REVIEW
+    // =====================================
+
+    const review = await Review.create({
+      productId,
+
+      customerName,
+
+      customerEmail,
+
+      rating: reviewRating,
+
+      comment: cleanComment,
+    });
+
+    console.log(`Review submitted for ${product.name} by ${customerName}`);
+
+    // =====================================
+    // SUCCESS RESPONSE
+    // =====================================
+
+    res.status(201).json({
+      success: true,
+      message: "Review submitted successfully.",
+      review,
+    });
+  } catch (error) {
+    console.error("Error submitting review:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to submit review.",
+    });
   }
 });
 
@@ -271,7 +547,54 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
 
           heading = "Your Order Has Been Delivered 🎉";
 
+          // =====================================
+          // CREATE REVIEW LINKS
+          // =====================================
+
+          const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+
+          const reviewLinks = order.items
+            .map((item) => {
+              const reviewUrl = `${baseUrl}/product/${item.productId}?review=${order.reviewToken}`;
+
+              return `
+                <div style="
+                  margin: 20px 0;
+                  padding: 20px;
+                  border: 1px solid #ddd;
+                  border-radius: 8px;
+                ">
+
+                  <h3 style="margin-top: 0;">
+                    ${item.name}
+                  </h3>
+
+                  <p>
+                    We'd love to hear what you think about this product.
+                  </p>
+
+                  <a
+                    href="${reviewUrl}"
+                    style="
+                      display: inline-block;
+                      padding: 12px 20px;
+                      background-color: #f0ad00;
+                      color: #000;
+                      text-decoration: none;
+                      font-weight: bold;
+                      border-radius: 6px;
+                    "
+                  >
+                    ⭐ Leave a Review
+                  </a>
+
+                </div>
+              `;
+            })
+            .join("");
+
           message = `
+
             <p>
               Your TEAM SAVAGE order has been delivered.
             </p>
@@ -281,8 +604,15 @@ app.post("/admin/orders/:id/status", isAdmin, async (req, res) => {
             </p>
 
             <p>
+              We'd love to hear what you think about your purchase.
+            </p>
+
+            ${reviewLinks}
+
+            <p>
               Thank you for shopping with TEAM SAVAGE.
             </p>
+
           `;
         }
 
@@ -749,8 +1079,7 @@ app.post("/api/orders", express.json(), async (req, res) => {
     // =====================================
     // CALCULATE TOTALS ON SERVER
     // =====================================
-    const deliveryFee = subtotal > 0 ? 100 : 0;
-
+    const deliveryFee = subtotal >= 1000 ? 0 : 100;
     const total = subtotal + deliveryFee;
 
     // =====================================
@@ -778,6 +1107,8 @@ app.post("/api/orders", express.json(), async (req, res) => {
       paymentStatus: "Pending",
 
       status: "Pending",
+
+      reviewToken: crypto.randomBytes(32).toString("hex"),
     });
 
     console.log("EFT Order saved:", order._id);
@@ -963,12 +1294,7 @@ function ipv4ToNumber(ip) {
 
   if (
     parts.length !== 4 ||
-    parts.some(
-      (part) =>
-        !Number.isInteger(part) ||
-        part < 0 ||
-        part > 255
-    )
+    parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
   ) {
     return null;
   }
@@ -977,7 +1303,8 @@ function ipv4ToNumber(ip) {
     (((parts[0] << 24) >>> 0) +
       ((parts[1] << 16) >>> 0) +
       ((parts[2] << 8) >>> 0) +
-      parts[3]) >>> 0
+      parts[3]) >>>
+    0
   );
 }
 
@@ -986,11 +1313,9 @@ function isIpInCidr(ip, cidr) {
     ip = ip.substring(7);
   }
 
-  const [network, prefixLengthString] =
-    cidr.split("/");
+  const [network, prefixLengthString] = cidr.split("/");
 
-  const prefixLength =
-    Number(prefixLengthString);
+  const prefixLength = Number(prefixLengthString);
 
   const ipNumber = ipv4ToNumber(ip);
   const networkNumber = ipv4ToNumber(network);
@@ -1006,14 +1331,9 @@ function isIpInCidr(ip, cidr) {
   }
 
   const mask =
-    prefixLength === 0
-      ? 0
-      : (0xffffffff << (32 - prefixLength)) >>> 0;
+    prefixLength === 0 ? 0 : (0xffffffff << (32 - prefixLength)) >>> 0;
 
-  return (
-    (ipNumber & mask) ===
-    (networkNumber & mask)
-  );
+  return (ipNumber & mask) === (networkNumber & mask);
 }
 
 function isPayfastIp(ip) {
@@ -1025,9 +1345,7 @@ function isPayfastIp(ip) {
     "144.126.193.139/32",
   ];
 
-  return payfastIps.some((cidr) =>
-    isIpInCidr(ip, cidr)
-  );
+  return payfastIps.some((cidr) => isIpInCidr(ip, cidr));
 }
 
 // =====================================
@@ -1036,7 +1354,6 @@ function isPayfastIp(ip) {
 
 app.post("/api/payfast/create", async (req, res) => {
   try {
-
     const { customerName, customerEmail, customerPhone, address, items } =
       req.body;
 
@@ -1149,8 +1466,7 @@ app.post("/api/payfast/create", async (req, res) => {
     // CURRENT DELIVERY FEE
     // =====================================
 
-    const deliveryFee = subtotal > 0 ? 100 : 0;
-
+    const deliveryFee = subtotal >= 1000 ? 0 : 100;
     const total = subtotal + deliveryFee;
 
     // =====================================
@@ -1159,18 +1475,28 @@ app.post("/api/payfast/create", async (req, res) => {
 
     const order = await Order.create({
       customerName,
+
       customerEmail,
+
       customerPhone,
+
       address,
+
       items: verifiedItems,
+
       subtotal,
+
       deliveryFee,
+
       total,
 
       paymentMethod: "Payfast",
+
       paymentStatus: "Pending",
 
       status: "Pending",
+
+      reviewToken: crypto.randomBytes(32).toString("hex"),
     });
 
     console.log("Payfast order created:", order._id);
@@ -1262,32 +1588,22 @@ app.post(
 
       const sourceIp = req.ip;
 
-      console.log(
-        "Payfast ITN source IP:",
-        sourceIp
-      );
+      console.log("Payfast ITN source IP:", sourceIp);
 
       if (!isPayfastIp(sourceIp)) {
-        console.error(
-          "Rejected Payfast ITN from unauthorized IP:",
-          sourceIp
-        );
+        console.error("Rejected Payfast ITN from unauthorized IP:", sourceIp);
 
         return res.status(403).send("Forbidden");
       }
 
-      console.log(
-        "Payfast source IP verified."
-      );
+      console.log("Payfast source IP verified.");
 
       // =====================================
       // BASIC PAYMENT ID CHECK
       // =====================================
 
       if (!paymentData.m_payment_id) {
-        console.error(
-          "Payfast ITN missing payment ID."
-        );
+        console.error("Payfast ITN missing payment ID.");
 
         return res.status(400).send("Bad Request");
       }
@@ -1296,16 +1612,10 @@ app.post(
       // FIND ORDER
       // =====================================
 
-      const order =
-        await Order.findById(
-          paymentData.m_payment_id
-        );
+      const order = await Order.findById(paymentData.m_payment_id);
 
       if (!order) {
-        console.error(
-          "Payfast order not found:",
-          paymentData.m_payment_id
-        );
+        console.error("Payfast order not found:", paymentData.m_payment_id);
 
         return res.status(404).send("Order not found");
       }
@@ -1314,12 +1624,8 @@ app.post(
       // VERIFY PAYMENT METHOD
       // =====================================
 
-      if (
-        order.paymentMethod !== "Payfast"
-      ) {
-        console.error(
-          `Order ${order._id} is not a Payfast order.`
-        );
+      if (order.paymentMethod !== "Payfast") {
+        console.error(`Order ${order._id} is not a Payfast order.`);
 
         return res.status(400).send("Invalid payment method");
       }
@@ -1328,12 +1634,8 @@ app.post(
       // DUPLICATE PAYMENT PROTECTION
       // =====================================
 
-      if (
-        order.paymentStatus === "Paid"
-      ) {
-        console.log(
-          `Order ${order._id} is already Paid.`
-        );
+      if (order.paymentStatus === "Paid") {
+        console.log(`Order ${order._id} is already Paid.`);
 
         return res.status(200).send("OK");
       }
@@ -1342,13 +1644,10 @@ app.post(
       // VERIFY PAYMENT STATUS
       // =====================================
 
-      if (
-        paymentData.payment_status !==
-        "COMPLETE"
-      ) {
+      if (paymentData.payment_status !== "COMPLETE") {
         console.log(
           "Payfast payment is not complete:",
-          paymentData.payment_status
+          paymentData.payment_status,
         );
 
         return res.status(200).send("OK");
@@ -1358,162 +1657,96 @@ app.post(
       // VERIFY MERCHANT ID
       // =====================================
 
-      if (
-        paymentData.merchant_id !==
-        process.env.PAYFAST_MERCHANT_ID
-      ) {
-        console.error(
-          "Payfast merchant ID mismatch."
-        );
+      if (paymentData.merchant_id !== process.env.PAYFAST_MERCHANT_ID) {
+        console.error("Payfast merchant ID mismatch.");
 
-        return res.status(400).send(
-          "Invalid merchant"
-        );
+        return res.status(400).send("Invalid merchant");
       }
 
-      console.log(
-        "Payfast merchant ID verified."
-      );
+      console.log("Payfast merchant ID verified.");
 
       // =====================================
       // VERIFY SIGNATURE
       // =====================================
 
-      const receivedSignature =
-        paymentData.signature;
+      const receivedSignature = paymentData.signature;
 
-      const calculatedSignature =
-        generatePayfastSignature(
-          paymentData
-        );
+      const calculatedSignature = generatePayfastSignature(paymentData);
 
-      if (
-        !receivedSignature ||
-        receivedSignature !==
-          calculatedSignature
-      ) {
-        console.error(
-          "Payfast ITN signature validation failed."
-        );
+      if (!receivedSignature || receivedSignature !== calculatedSignature) {
+        console.error("Payfast ITN signature validation failed.");
 
-        return res.status(400).send(
-          "Invalid signature"
-        );
+        return res.status(400).send("Invalid signature");
       }
 
-      console.log(
-        "Payfast signature verified."
-      );
+      console.log("Payfast signature verified.");
 
       // =====================================
       // VERIFY PAYMENT AMOUNT
       // =====================================
 
-      const receivedAmount =
-        Number(
-          paymentData.amount_gross
-        );
+      const receivedAmount = Number(paymentData.amount_gross);
 
-      const orderAmount =
-        Number(order.total);
+      const orderAmount = Number(order.total);
 
       if (
-        !Number.isFinite(
-          receivedAmount
-        ) ||
-        Math.abs(
-          receivedAmount -
-            orderAmount
-        ) > 0.01
+        !Number.isFinite(receivedAmount) ||
+        Math.abs(receivedAmount - orderAmount) > 0.01
       ) {
-        console.error(
-          "Payfast payment amount mismatch."
-        );
+        console.error("Payfast payment amount mismatch.");
 
-        console.error(
-          "Expected:",
-          orderAmount.toFixed(2)
-        );
+        console.error("Expected:", orderAmount.toFixed(2));
 
-        console.error(
-          "Received:",
-          receivedAmount
-        );
+        console.error("Received:", receivedAmount);
 
-        return res.status(400).send(
-          "Invalid amount"
-        );
+        return res.status(400).send("Invalid amount");
       }
 
-      console.log(
-        "Payfast payment amount verified."
-      );
+      console.log("Payfast payment amount verified.");
 
       // =====================================
       // SERVER-SIDE PAYFAST VALIDATION
       // =====================================
 
-      const validationString =
-        Object.entries(paymentData)
-          .filter(
-            ([key, value]) =>
-              key !== "signature" &&
-              value !== undefined &&
-              value !== null &&
-              value !== ""
-          )
-          .map(
-            ([key, value]) =>
-              `${key}=${encodeURIComponent(
-                String(value)
-              ).replace(/%20/g, "+")}`
-          )
-          .join("&");
+      const validationString = Object.entries(paymentData)
+        .filter(
+          ([key, value]) =>
+            key !== "signature" &&
+            value !== undefined &&
+            value !== null &&
+            value !== "",
+        )
+        .map(
+          ([key, value]) =>
+            `${key}=${encodeURIComponent(String(value)).replace(/%20/g, "+")}`,
+        )
+        .join("&");
 
-      const validateResponse =
-        await fetch(
-          getPayfastValidateUrl(),
-          {
-            method: "POST",
+      const validateResponse = await fetch(getPayfastValidateUrl(), {
+        method: "POST",
 
-            headers: {
-              "Content-Type":
-                "application/x-www-form-urlencoded",
-            },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
 
-            body: validationString,
-          }
-        );
+        body: validationString,
+      });
 
-      const validationResult =
-        (
-          await validateResponse.text()
-        ).trim();
+      const validationResult = (await validateResponse.text()).trim();
 
-      if (
-        validationResult !==
-        "VALID"
-      ) {
-        console.error(
-          "Payfast server validation failed:",
-          validationResult
-        );
+      if (validationResult !== "VALID") {
+        console.error("Payfast server validation failed:", validationResult);
 
-        return res.status(400).send(
-          "Payfast validation failed"
-        );
+        return res.status(400).send("Payfast validation failed");
       }
 
-      console.log(
-        "Payfast server validation successful."
-      );
+      console.log("Payfast server validation successful.");
 
       // =====================================
       // START MONGODB TRANSACTION
       // =====================================
 
-      session =
-        await mongoose.startSession();
+      session = await mongoose.startSession();
 
       session.startTransaction();
 
@@ -1521,31 +1754,21 @@ app.post(
       // RELOAD ORDER INSIDE TRANSACTION
       // =====================================
 
-      const transactionOrder =
-        await Order.findById(
-          order._id
-        ).session(session);
+      const transactionOrder = await Order.findById(order._id).session(session);
 
       if (!transactionOrder) {
-        throw new Error(
-          "Order disappeared before transaction."
-        );
+        throw new Error("Order disappeared before transaction.");
       }
 
       // =====================================
       // DUPLICATE PROTECTION INSIDE TRANSACTION
       // =====================================
 
-      if (
-        transactionOrder.paymentStatus ===
-        "Paid"
-      ) {
+      if (transactionOrder.paymentStatus === "Paid") {
         await session.commitTransaction();
         session.endSession();
 
-        console.log(
-          `Order ${transactionOrder._id} was already paid.`
-        );
+        console.log(`Order ${transactionOrder._id} was already paid.`);
 
         return res.status(200).send("OK");
       }
@@ -1554,59 +1777,45 @@ app.post(
       // REDUCE STOCK ATOMICALLY
       // =====================================
 
-      for (
-        const item of
-        transactionOrder.items
-      ) {
-        const quantity =
-          Number(item.quantity);
+      for (const item of transactionOrder.items) {
+        const quantity = Number(item.quantity);
 
-        if (
-          !Number.isInteger(quantity) ||
-          quantity <= 0
-        ) {
-          throw new Error(
-            `Invalid quantity for ${item.name}.`
-          );
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+          throw new Error(`Invalid quantity for ${item.name}.`);
         }
 
         // =====================================
         // CLOTHING
         // =====================================
 
-        if (
-          item.size &&
-          item.size.trim() !== ""
-        ) {
-          const updatedProduct =
-            await Product.findOneAndUpdate(
-              {
-                _id: item.productId,
+        if (item.size && item.size.trim() !== "") {
+          const updatedProduct = await Product.findOneAndUpdate(
+            {
+              _id: item.productId,
 
-                sizes: {
-                  $elemMatch: {
-                    size: item.size,
-                    stock: {
-                      $gte: quantity,
-                    },
+              sizes: {
+                $elemMatch: {
+                  size: item.size,
+                  stock: {
+                    $gte: quantity,
                   },
                 },
               },
-              {
-                $inc: {
-                  "sizes.$.stock":
-                    -quantity,
-                },
+            },
+            {
+              $inc: {
+                "sizes.$.stock": -quantity,
               },
-              {
-                new: true,
-                session,
-              }
-            );
+            },
+            {
+              new: true,
+              session,
+            },
+          );
 
           if (!updatedProduct) {
             throw new Error(
-              `Not enough stock for ${item.name} size ${item.size}.`
+              `Not enough stock for ${item.name} size ${item.size}.`,
             );
           }
         }
@@ -1614,31 +1823,27 @@ app.post(
         // =====================================
         // ACCESSORIES
         // =====================================
-
         else {
-          const updatedProduct =
-            await Product.findOneAndUpdate(
-              {
-                _id: item.productId,
-                stock: {
-                  $gte: quantity,
-                },
+          const updatedProduct = await Product.findOneAndUpdate(
+            {
+              _id: item.productId,
+              stock: {
+                $gte: quantity,
               },
-              {
-                $inc: {
-                  stock: -quantity,
-                },
+            },
+            {
+              $inc: {
+                stock: -quantity,
               },
-              {
-                new: true,
-                session,
-              }
-            );
+            },
+            {
+              new: true,
+              session,
+            },
+          );
 
           if (!updatedProduct) {
-            throw new Error(
-              `Not enough stock for ${item.name}.`
-            );
+            throw new Error(`Not enough stock for ${item.name}.`);
           }
         }
       }
@@ -1647,13 +1852,11 @@ app.post(
       // MARK ORDER AS PAID
       // =====================================
 
-      transactionOrder.paymentStatus =
-        "Paid";
+      transactionOrder.paymentStatus = "Paid";
 
       // IMPORTANT:
       // Fulfilment status stays Pending.
-      transactionOrder.status =
-        "Pending";
+      transactionOrder.status = "Pending";
 
       await transactionOrder.save({
         session,
@@ -1668,27 +1871,18 @@ app.post(
 
       session = null;
 
-      console.log(
-        `PAYFAST PAYMENT CONFIRMED — Order ${transactionOrder._id}`
-      );
+      console.log(`PAYFAST PAYMENT CONFIRMED — Order ${transactionOrder._id}`);
 
       // =====================================
       // CUSTOMER CONFIRMATION EMAIL
       // =====================================
 
       try {
-        await sendOrderConfirmation(
-          transactionOrder
-        );
+        await sendOrderConfirmation(transactionOrder);
 
-        console.log(
-          "Payfast customer confirmation email sent."
-        );
+        console.log("Payfast customer confirmation email sent.");
       } catch (emailError) {
-        console.error(
-          "Payfast customer email error:",
-          emailError
-        );
+        console.error("Payfast customer email error:", emailError);
       }
 
       // =====================================
@@ -1696,18 +1890,11 @@ app.post(
       // =====================================
 
       try {
-        await sendAdminOrderNotification(
-          transactionOrder
-        );
+        await sendAdminOrderNotification(transactionOrder);
 
-        console.log(
-          "Payfast admin notification email sent."
-        );
+        console.log("Payfast admin notification email sent.");
       } catch (emailError) {
-        console.error(
-          "Payfast admin email error:",
-          emailError
-        );
+        console.error("Payfast admin email error:", emailError);
       }
 
       // =====================================
@@ -1715,13 +1902,8 @@ app.post(
       // =====================================
 
       return res.status(200).send("OK");
-
     } catch (error) {
-
-      console.error(
-        "Payfast ITN error:",
-        error
-      );
+      console.error("Payfast ITN error:", error);
 
       // =====================================
       // ROLLBACK TRANSACTION
@@ -1731,20 +1913,15 @@ app.post(
         try {
           await session.abortTransaction();
         } catch (abortError) {
-          console.error(
-            "Payfast transaction rollback error:",
-            abortError
-          );
+          console.error("Payfast transaction rollback error:", abortError);
         }
 
         session.endSession();
       }
 
-      return res.status(500).send(
-        "Internal Server Error"
-      );
+      return res.status(500).send("Internal Server Error");
     }
-  }
+  },
 );
 
 app.post("/admin/update-stock/:id", isAdmin, async (req, res) => {

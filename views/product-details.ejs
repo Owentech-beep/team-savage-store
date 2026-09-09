@@ -2,27 +2,27 @@
 <%- include("partials/navbar") %>
 
 <%
-  const hasSizeStock =
-    product.sizes &&
-    product.sizes.length > 0 &&
-    typeof product.sizes[0] === "object";
+const hasSizeStock =
+product.sizes &&
+product.sizes.length > 0 &&
+typeof product.sizes[0] === "object";
 
-  const totalSizeStock = hasSizeStock
-    ? product.sizes.reduce(
-        (total, item) => total + Number(item.stock || 0),
-        0
-      )
-    : 0;
+const totalSizeStock = hasSizeStock
+? product.sizes.reduce(
+(total, item) => total + Number(item.stock || 0),
+0
+)
+: 0;
 
-  const availableSizes = hasSizeStock
-    ? product.sizes.filter(
-        item => Number(item.stock || 0) > 0
-      )
-    : [];
+const availableSizes = hasSizeStock
+? product.sizes.filter(
+item => Number(item.stock || 0) > 0
+)
+: [];
 
-  const productInStock = hasSizeStock
-    ? totalSizeStock > 0
-    : Number(product.stock || 0) > 0;
+const productInStock = hasSizeStock
+? totalSizeStock > 0
+: Number(product.stock || 0) > 0;
 %>
 
 <section class="product-details-page py-5 bg-white text-dark">
@@ -55,18 +55,18 @@
             <!-- GALLERY IMAGES -->
             <% if (product.gallery && product.gallery.length > 0) { %>
 
-              <% product.gallery.forEach((image, index) => { %>
+            <% product.gallery.forEach((image, index) => { %>
 
-                <div class="carousel-item">
+            <div class="carousel-item">
 
-                  <img
-                    src="<%= image %>"
-                    class="d-block w-100 product-carousel-image"
-                    alt="<%= product.name %> image <%= index + 2 %>">
+              <img
+                src="<%= image %>"
+                class="d-block w-100 product-carousel-image"
+                alt="<%= product.name %> image <%= index + 2 %>">
 
-                </div>
+            </div>
 
-              <% }) %>
+            <% }) %>
 
             <% } %>
 
@@ -106,7 +106,6 @@
 
       </div>
 
-
       <!-- =====================================
            PRODUCT INFORMATION
       ====================================== -->
@@ -120,7 +119,6 @@
           R<%= Number(product.price).toFixed(2) %>
         </p>
 
-
         <!-- =====================================
              OVERALL STOCK STATUS
         ====================================== -->
@@ -128,234 +126,223 @@
 
           <% if (!productInStock) { %>
 
-            <span class="badge bg-danger fs-6">
+          <span class="badge bg-danger fs-6">
 
-              <i class="fa-solid fa-circle-xmark me-1"></i>
+            <i class="fa-solid fa-circle-xmark me-1"></i>
 
-              Out of Stock
+            Out of Stock
 
-            </span>
+          </span>
 
           <% } else if (hasSizeStock) { %>
 
-            <span class="badge bg-success fs-6">
+          <span class="badge bg-success fs-6">
 
-              <i class="fa-solid fa-circle-check me-1"></i>
+            <i class="fa-solid fa-circle-check me-1"></i>
 
-              <%= availableSizes.length %>
-              size<%= availableSizes.length !== 1 ? "s" : "" %>
-              available
+            <%= availableSizes.length %>
+            size<%= availableSizes.length !== 1 ? "s" : "" %>
+            available
 
-            </span>
+          </span>
 
           <% } else if (Number(product.stock) <= 5) { %>
 
-            <span class="badge bg-warning text-dark fs-6">
+          <span class="badge bg-warning text-dark fs-6">
 
-              <i class="fa-solid fa-triangle-exclamation me-1"></i>
+            <i class="fa-solid fa-triangle-exclamation me-1"></i>
 
-              Only <%= product.stock %> left
+            Only <%= product.stock %> left
 
-            </span>
+          </span>
 
           <% } else { %>
 
-            <span class="badge bg-success fs-6">
+          <span class="badge bg-success fs-6">
 
-              <i class="fa-solid fa-circle-check me-1"></i>
+            <i class="fa-solid fa-circle-check me-1"></i>
 
-              In Stock — <%= product.stock %> left
+            In Stock — <%= product.stock %> left
 
-            </span>
+          </span>
 
           <% } %>
 
         </div>
-
 
         <!-- DESCRIPTION -->
         <p class="text-muted mb-4">
           <%= product.description %>
         </p>
 
-
         <!-- =====================================
              PURCHASE OPTIONS
         ====================================== -->
         <% if (productInStock) { %>
 
-
-          <!-- =====================================
+        <!-- =====================================
                CLOTHING SIZE SELECTION
           ====================================== -->
-          <% if (hasSizeStock) { %>
+        <% if (hasSizeStock) { %>
 
-            <div class="mb-3">
+        <div class="mb-3">
 
-              <label class="form-label fw-bold">
-                Select Size
-              </label>
+          <label class="form-label fw-bold">
+            Select Size
+          </label>
 
-              <select
-                class="form-select product-size"
-                id="productSize">
+          <select
+            class="form-select product-size"
+            id="productSize">
 
-                <option value="">
-                  Choose Size
-                </option>
+            <option value>
+              Choose Size
+            </option>
 
+            <% product.sizes.forEach(item => { %>
 
-                <% product.sizes.forEach(item => { %>
+            <% const sizeStock = Number(item.stock || 0); %>
 
-                  <% const sizeStock = Number(item.stock || 0); %>
+            <option
+              value="<%= item.size %>"
+              data-stock="<%= sizeStock %>"
+              <%=sizeStock <=0 ? "disabled" : "" %>>
 
-                  <option
-                    value="<%= item.size %>"
-                    data-stock="<%= sizeStock %>"
-                    <%= sizeStock <= 0 ? "disabled" : "" %>>
+              <%= item.size %>
 
-                    <%= item.size %>
+              <% if (sizeStock <= 0) { %>
 
-                    <% if (sizeStock <= 0) { %>
+              — Out of Stock
 
-                      — Out of Stock
+              <% } else if (sizeStock <= 5) { %>
 
-                    <% } else if (sizeStock <= 5) { %>
-
-                      — <%= sizeStock %> left
-
-                    <% } else { %>
-
-                      — In Stock
-
-                    <% } %>
-
-                  </option>
-
-                <% }) %>
-
-              </select>
-
-            </div>
-
-
-            <!-- SELECTED SIZE STOCK MESSAGE -->
-            <div
-              id="sizeStockMessage"
-              class="mb-3">
-
-              <small class="text-muted">
-                Select a size to check availability.
-              </small>
-
-            </div>
-
-          <% } %>
-
-
-          <!-- =====================================
-               COLOUR SELECTION
-          ====================================== -->
-          <% if (product.colors && product.colors.length > 0) { %>
-
-            <div class="mb-4">
-
-              <label class="form-label fw-bold">
-                Available Colours
-              </label>
-
-              <select class="form-select product-color">
-
-                <option value="">
-                  Choose Colour
-                </option>
-
-                <% product.colors.forEach(color => { %>
-
-                  <option value="<%= color %>">
-                    <%= color %>
-                  </option>
-
-                <% }) %>
-
-              </select>
-
-            </div>
-
-          <% } %>
-
-
-          <!-- =====================================
-               QUANTITY
-          ====================================== -->
-          <div class="mb-4">
-
-            <label class="form-label fw-bold">
-              Quantity
-            </label>
-
-            <input
-              type="number"
-              value="1"
-              min="1"
-              max="<%= hasSizeStock ? 1 : product.stock %>"
-              class="form-control product-quantity"
-              style="max-width: 120px;">
-
-            <small
-              id="quantityMessage"
-              class="text-muted">
-
-              <% if (hasSizeStock) { %>
-
-                Select a size first.
+              — <%= sizeStock %> left
 
               <% } else { %>
 
-                Maximum available: <%= product.stock %>
+              — In Stock
 
               <% } %>
 
-            </small>
+            </option>
 
-          </div>
+            <% }) %>
 
+          </select>
 
-          <!-- =====================================
-               ADD TO CART
+        </div>
+
+        <!-- SELECTED SIZE STOCK MESSAGE -->
+        <div
+          id="sizeStockMessage"
+          class="mb-3">
+
+          <small class="text-muted">
+            Select a size to check availability.
+          </small>
+
+        </div>
+
+        <% } %>
+
+        <!-- =====================================
+               COLOUR SELECTION
           ====================================== -->
-          <button
-            class="btn btn-warning btn-lg add-to-cart"
-            data-id="<%= product._id %>"
-            data-name="<%= product.name %>"
-            data-price="<%= product.price %>"
-            data-image="<%= product.image %>"
-            data-stock="<%= hasSizeStock ? totalSizeStock : product.stock %>"
-            <%= hasSizeStock ? "disabled" : "" %>>
+        <% if (product.colors && product.colors.length > 0) { %>
 
-            <i class="fa-solid fa-cart-shopping me-2"></i>
+        <div class="mb-4">
 
-            Add to Cart
+          <label class="form-label fw-bold">
+            Available Colours
+          </label>
 
-          </button>
+          <select class="form-select product-color">
 
+            <option value>
+              Choose Colour
+            </option>
+
+            <% product.colors.forEach(color => { %>
+
+            <option value="<%= color %>">
+              <%= color %>
+            </option>
+
+            <% }) %>
+
+          </select>
+
+        </div>
+
+        <% } %>
+
+        <!-- =====================================
+               QUANTITY
+          ====================================== -->
+        <div class="mb-4">
+
+          <label class="form-label fw-bold">
+            Quantity
+          </label>
+
+          <input
+            type="number"
+            value="1"
+            min="1"
+            max="<%= hasSizeStock ? 1 : product.stock %>"
+            class="form-control product-quantity"
+            style="max-width: 120px;">
+
+          <small
+            id="quantityMessage"
+            class="text-muted">
+
+            <% if (hasSizeStock) { %>
+
+            Select a size first.
+
+            <% } else { %>
+
+            Maximum available: <%= product.stock %>
+
+            <% } %>
+
+          </small>
+
+        </div>
+
+        <!-- =====================================
+             ADD TO CART
+        ====================================== -->
+        <button
+          class="btn btn-warning btn-lg add-to-cart"
+          data-id="<%= product._id %>"
+          data-name="<%= product.name %>"
+          data-price="<%= product.price %>"
+          data-image="<%= product.image %>"
+          data-stock="<%= hasSizeStock ? totalSizeStock : product.stock %>"
+          <%=hasSizeStock ? "disabled" : "" %>>
+
+          <i class="fa-solid fa-cart-shopping me-2"></i>
+
+          Add to Cart
+
+        </button>
 
         <% } else { %>
 
+        <!-- =====================================
+             OUT OF STOCK
+        ====================================== -->
+        <button
+          class="btn btn-secondary btn-lg"
+          disabled>
 
-          <!-- =====================================
-               OUT OF STOCK
-          ====================================== -->
-          <button
-            class="btn btn-secondary btn-lg"
-            disabled>
+          <i class="fa-solid fa-ban me-2"></i>
 
-            <i class="fa-solid fa-ban me-2"></i>
+          Out of Stock
 
-            Out of Stock
-
-          </button>
-
+        </button>
 
         <% } %>
 
@@ -366,6 +353,194 @@
   </div>
 </section>
 
+<!-- =====================================
+     CUSTOMER REVIEWS
+====================================== -->
+
+<section class="py-5 bg-white text-dark">
+
+  <div class="container">
+
+    <hr class="my-5">
+
+    <div class="text-center mb-5">
+
+      <h2 class="fw-bold">
+        Customer Reviews
+      </h2>
+
+      <p class="text-muted">
+        See what our customers think about this product.
+      </p>
+
+    </div>
+
+    <!-- REVIEW SUMMARY -->
+    <div class="card shadow-sm border-0 mb-5">
+
+      <div class="card-body text-center p-4">
+
+        <h3 id="averageRating" class="fw-bold mb-2">
+          No ratings yet
+        </h3>
+
+        <div
+          id="averageStars"
+          class="text-warning fs-4 mb-2">
+        </div>
+
+        <p
+          id="reviewCount"
+          class="text-muted mb-0">
+          No reviews yet
+        </p>
+
+      </div>
+
+    </div>
+
+    <!-- REVIEWS LIST -->
+    <div id="reviewsList">
+
+      <div class="text-center text-muted py-4">
+        Loading reviews...
+      </div>
+
+    </div>
+
+    <!-- WRITE A REVIEW -->
+    <div class="card shadow-sm border-0 mt-5">
+
+      <div class="card-body p-4">
+
+        <h4 class="fw-bold mb-4">
+          Write a Review
+        </h4>
+
+        <form id="reviewForm">
+
+          <!-- =====================================
+       REVIEW ACCESS STATUS
+  ====================================== -->
+
+          <div
+            id="reviewAccessMessage"
+            class="alert alert-secondary mb-4">
+
+            <i class="fa-solid fa-lock me-2"></i>
+
+            Reviews can only be submitted using a verified
+            review link.
+
+          </div>
+
+          <!-- =====================================
+       CUSTOMER RATING
+  ====================================== -->
+
+          <div class="mb-3">
+
+            <label
+              for="reviewRating"
+              class="form-label fw-semibold">
+
+              Your Rating
+
+            </label>
+
+            <select
+              id="reviewRating"
+              class="form-select"
+              required>
+
+              <option value>
+                Choose a rating
+              </option>
+
+              <option value="5">
+                ⭐⭐⭐⭐⭐ — Excellent
+              </option>
+
+              <option value="4">
+                ⭐⭐⭐⭐ — Very Good
+              </option>
+
+              <option value="3">
+                ⭐⭐⭐ — Good
+              </option>
+
+              <option value="2">
+                ⭐⭐ — Fair
+              </option>
+
+              <option value="1">
+                ⭐ — Poor
+              </option>
+
+            </select>
+
+          </div>
+
+          <!-- =====================================
+       CUSTOMER REVIEW
+  ====================================== -->
+
+          <div class="mb-4">
+
+            <label
+              for="reviewComment"
+              class="form-label fw-semibold">
+
+              Your Review
+
+            </label>
+
+            <textarea
+              id="reviewComment"
+              class="form-control"
+              rows="5"
+              maxlength="1000"
+              placeholder="Tell us about your experience..."
+              required></textarea>
+
+            <small class="text-muted">
+
+              Maximum 1000 characters.
+
+            </small>
+
+          </div>
+
+          <!-- =====================================
+       SUBMIT BUTTON
+  ====================================== -->
+
+          <button
+            type="submit"
+            id="submitReviewButton"
+            class="btn btn-warning btn-lg"
+            disabled>
+
+            <i class="fa-solid fa-star me-2"></i>
+
+            Submit Review
+
+          </button>
+
+        </form>
+
+        <div
+          id="reviewMessage"
+          class="mt-3">
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
 
 <!-- =====================================
      SIZE STOCK JAVASCRIPT
@@ -520,5 +695,536 @@
 
 </script>
 
+<!-- =====================================
+     CUSTOMER REVIEWS JAVASCRIPT
+===================================== -->
+<script>
+
+  document.addEventListener("DOMContentLoaded", () => {
+
+    const productId = "<%= product._id %>";
+
+    const reviewToken = "<%= reviewToken || '' %>";
+
+
+    // =====================================
+    // REVIEW ELEMENTS
+    // =====================================
+
+    const reviewAccessMessage =
+      document.getElementById("reviewAccessMessage");
+
+    const submitReviewButton =
+      document.getElementById("submitReviewButton");
+
+    const averageRating =
+      document.getElementById("averageRating");
+
+    const averageStars =
+      document.getElementById("averageStars");
+
+    const reviewCount =
+      document.getElementById("reviewCount");
+
+    const reviewsList =
+      document.getElementById("reviewsList");
+
+    const reviewForm =
+      document.getElementById("reviewForm");
+
+    const reviewMessage =
+      document.getElementById("reviewMessage");
+
+
+    // =====================================
+    // ESCAPE HTML
+    // Prevent unsafe HTML from reviews
+    // =====================================
+
+    function escapeHtml(text) {
+
+      const div =
+        document.createElement("div");
+
+      div.textContent = text;
+
+      return div.innerHTML;
+
+    }
+
+
+    // =====================================
+    // CREATE STAR DISPLAY
+    // =====================================
+
+    function createStars(rating) {
+
+      let stars = "";
+
+      for (let i = 1; i <= 5; i++) {
+
+        if (i <= rating) {
+
+          stars += "★";
+
+        } else {
+
+          stars += "☆";
+
+        }
+
+      }
+
+      return stars;
+
+    }
+
+
+    // =====================================
+    // LOAD REVIEWS
+    // =====================================
+
+    async function loadReviews() {
+
+      try {
+
+        const response =
+          await fetch(`/api/reviews/${productId}`);
+
+        const data =
+          await response.json();
+
+
+        if (!data.success) {
+
+          throw new Error(
+            data.message ||
+            "Unable to load reviews."
+          );
+
+        }
+
+
+        const reviews =
+          data.reviews || [];
+
+
+        // =====================================
+        // NO REVIEWS
+        // =====================================
+
+        if (reviews.length === 0) {
+
+          averageRating.textContent =
+            "No ratings yet";
+
+          averageStars.textContent = "";
+
+          reviewCount.textContent =
+            "No reviews yet";
+
+          reviewsList.innerHTML = `
+            <div class="text-center text-muted py-4">
+
+              <i class="fa-regular fa-star fa-2x mb-3"></i>
+
+              <p class="mb-0">
+                Be the first to review this product.
+              </p>
+
+            </div>
+          `;
+
+          return;
+
+        }
+
+
+        // =====================================
+        // CALCULATE AVERAGE
+        // =====================================
+
+        const totalRating =
+          reviews.reduce(
+            (sum, review) =>
+              sum + Number(review.rating),
+            0
+          );
+
+        const average =
+          totalRating / reviews.length;
+
+
+        // =====================================
+        // DISPLAY SUMMARY
+        // =====================================
+
+        averageRating.textContent =
+          `${average.toFixed(1)} / 5`;
+
+        averageStars.textContent =
+          createStars(Math.round(average));
+
+        reviewCount.textContent =
+          `${reviews.length} ${
+            reviews.length === 1
+              ? "review"
+              : "reviews"
+          }`;
+
+
+        // =====================================
+        // DISPLAY REVIEWS
+        // =====================================
+
+        reviewsList.innerHTML =
+          reviews.map((review) => {
+
+            const date =
+              new Date(review.createdAt)
+                .toLocaleDateString("en-ZA", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric"
+                });
+
+
+            return `
+              <div class="card shadow-sm border-0 mb-4">
+
+                <div class="card-body p-4">
+
+                  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+
+                    <div>
+
+                      <h5 class="fw-bold mb-1">
+                        ${escapeHtml(review.customerName)}
+                      </h5>
+
+                      <div class="text-warning">
+                        ${createStars(
+                          Number(review.rating)
+                        )}
+                      </div>
+
+                    </div>
+
+                    <small class="text-muted">
+                      ${date}
+                    </small>
+
+                  </div>
+
+                  <hr>
+
+                  <p class="mb-0">
+                    ${escapeHtml(review.comment)}
+                  </p>
+
+                </div>
+
+              </div>
+            `;
+
+          }).join("");
+
+
+      } catch (error) {
+
+        console.error(
+          "Error loading reviews:",
+          error
+        );
+
+        averageRating.textContent =
+          "Reviews unavailable";
+
+        averageStars.textContent = "";
+
+        reviewCount.textContent =
+          "Unable to load reviews.";
+
+        reviewsList.innerHTML = `
+          <div class="alert alert-danger">
+            Unable to load reviews right now.
+          </div>
+        `;
+
+      }
+
+    }
+
+
+    // =====================================
+    // VERIFY REVIEW ACCESS
+    // =====================================
+
+    async function verifyReviewAccess() {
+
+      // =====================================
+      // NO TOKEN
+      // =====================================
+
+      if (!reviewToken) {
+
+        reviewAccessMessage.className =
+          "alert alert-secondary mb-4";
+
+        reviewAccessMessage.innerHTML = `
+          <i class="fa-solid fa-lock me-2"></i>
+
+          Reviews can only be submitted using
+          a verified review link.
+        `;
+
+        submitReviewButton.disabled = true;
+
+        return;
+
+      }
+
+
+      // =====================================
+      // VERIFY TOKEN WITH SERVER
+      // =====================================
+
+      try {
+
+        const response =
+          await fetch(
+            `/api/reviews/verify/${reviewToken}/${productId}`
+          );
+
+
+        const data =
+          await response.json();
+
+
+        // =====================================
+        // INVALID TOKEN
+        // =====================================
+
+        if (!response.ok || !data.success) {
+
+          reviewAccessMessage.className =
+            "alert alert-danger mb-4";
+
+          reviewAccessMessage.innerHTML = `
+            <i class="fa-solid fa-circle-exclamation me-2"></i>
+
+            ${escapeHtml(
+              data.message ||
+              "This review link is invalid."
+            )}
+          `;
+
+          submitReviewButton.disabled = true;
+
+          return;
+
+        }
+
+
+        // =====================================
+        // VALID TOKEN
+        // =====================================
+
+        reviewAccessMessage.className =
+          "alert alert-success mb-4";
+
+        reviewAccessMessage.innerHTML = `
+          <i class="fa-solid fa-circle-check me-2"></i>
+
+          You are verified. You can now leave
+          your review.
+        `;
+
+        submitReviewButton.disabled = false;
+
+
+      } catch (error) {
+
+        console.error(
+          "Error verifying review access:",
+          error
+        );
+
+
+        reviewAccessMessage.className =
+          "alert alert-danger mb-4";
+
+        reviewAccessMessage.innerHTML = `
+          <i class="fa-solid fa-circle-exclamation me-2"></i>
+
+          Unable to verify your review link.
+        `;
+
+        submitReviewButton.disabled = true;
+
+      }
+
+    }
+
+
+    // =====================================
+    // SUBMIT REVIEW
+    // =====================================
+
+    reviewForm.addEventListener(
+      "submit",
+      async (event) => {
+
+        event.preventDefault();
+
+
+        const rating =
+          document.getElementById("reviewRating")
+            .value;
+
+
+        const comment =
+          document.getElementById("reviewComment")
+            .value
+            .trim();
+
+
+        // =====================================
+        // CHECK REVIEW TOKEN
+        // =====================================
+
+        if (!reviewToken) {
+
+          reviewMessage.innerHTML = `
+            <div class="alert alert-warning">
+
+              <i class="fa-solid fa-lock me-2"></i>
+
+              You need a verified review link
+              to submit a review.
+
+            </div>
+          `;
+
+          return;
+
+        }
+
+
+        reviewMessage.innerHTML = `
+          <div class="alert alert-info">
+
+            Submitting your review...
+
+          </div>
+        `;
+
+
+        try {
+
+          const response =
+            await fetch("/api/reviews", {
+
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json"
+              },
+
+              body: JSON.stringify({
+
+                productId,
+
+                reviewToken,
+
+                rating,
+
+                comment
+
+              })
+
+            });
+
+
+          const data =
+            await response.json();
+
+
+          // =====================================
+          // ERROR
+          // =====================================
+
+          if (!response.ok || !data.success) {
+
+            throw new Error(
+              data.message ||
+              "Unable to submit review."
+            );
+
+          }
+
+
+          // =====================================
+          // SUCCESS
+          // =====================================
+
+          reviewMessage.innerHTML = `
+            <div class="alert alert-success">
+
+              <i class="fa-solid fa-circle-check me-2"></i>
+
+              ${escapeHtml(data.message)}
+
+            </div>
+          `;
+
+
+          reviewForm.reset();
+
+
+          // Disable button after successful review
+          submitReviewButton.disabled = true;
+
+
+          // Reload reviews
+          await loadReviews();
+
+
+        } catch (error) {
+
+          console.error(
+            "Error submitting review:",
+            error
+          );
+
+
+          reviewMessage.innerHTML = `
+            <div class="alert alert-danger">
+
+              <i class="fa-solid fa-circle-exclamation me-2"></i>
+
+              ${escapeHtml(error.message)}
+
+            </div>
+          `;
+
+        }
+
+      }
+    );
+
+
+    // =====================================
+    // INITIALIZE REVIEWS
+    // =====================================
+
+    loadReviews();
+
+    verifyReviewAccess();
+
+  });
+
+</script>
 
 <%- include("partials/footer") %>
